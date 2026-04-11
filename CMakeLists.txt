@@ -22,16 +22,15 @@ CPMAddPackage(
   VERSION 3.11.0
 )
 
-# DiligentCore is the actual library repo — the DiligentEngine repo is just
-# an umbrella of submodules and doesn't wire up CPM targets properly.
 CPMAddPackage(
-    NAME DiligentCore
-    GITHUB_REPOSITORY DiligentGraphics/DiligentCore
-    GIT_TAG v2.5.6
+    NAME raylib
+    GITHUB_REPOSITORY raysan5/raylib
+    GIT_TAG 5.5
     OPTIONS
-        "DILIGENT_BUILD_TESTS OFF"
-        "DILIGENT_NO_GLSLANG OFF"   # set ON to skip GLSL->SPIRV compilation if you don't need it
+        "BUILD_EXAMPLES OFF"
+        "BUILD_GAMES OFF"
 )
+
 
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
@@ -46,23 +45,13 @@ endif()
 add_library(engine STATIC ${ENGINE_SOURCES})
 target_compile_features(engine PUBLIC cxx_std_23)
 
-target_include_directories(engine PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/src"
-)
-
-# Link against DiligentCore's actual exported targets.
-# Diligent-GraphicsEngine is the main interface target.
-# Add platform-specific backends as needed.
 target_link_libraries(engine PUBLIC
-    xcb
     EnTT::EnTT
-    Diligent-GraphicsEngine
-    Diligent-GraphicsEngineVk-shared   # or -static; swap for Vulkan/D3D11/D3D12/Metal
+    raylib
 )
 
 target_include_directories(engine PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${DiligentCore_SOURCE_DIR}"   # <-- this one line is all you need
 )
 
 add_executable(example example/main.cpp)

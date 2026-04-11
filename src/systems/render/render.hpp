@@ -5,25 +5,35 @@
 #include "ecs/ecs.hpp"
 #include "core/context.hpp"
 
-#include "systems/render/diligent/diligent.hpp"
+#include "systems/render/raylib/raylib.hpp"
 
 #include <xcb/xcb.h>
 
 struct RenderSystem : System {
-  RenderContext renderContext;
+  private:
+    RenderContext renderContext;
 
-  void init(Context& context) {
-    renderContext.init(1280, 720, "engine");
-  }
+    void localizeMesh(); // convert from BigNumber space to local float
 
-  void draw(Context& context, float dt) {
-    if (!renderContext.update()) {
-      context.dispatcher.trigger<QuitEvent>();
+  public:
+    void init(Context& context) {
+      renderContext.init(1280, 720, "engine");
+
+      renderContext.setCameraPosition({10, 3, 3});
+      renderContext.setCameraTarget({0, 0, 0});
     }
-    
-    // auto view = registry.view<MeshRenderer, Spatial>();
-    // view.each([](auto &mesh_renderer, auto &spatial){
-      // interface with the graphics library and render the mesh
-    // });
-  }
+
+    void draw(Context& context, float dt) {
+      renderContext.update();
+      
+      if (false) {
+        renderContext.shutdown();
+        context.dispatcher.trigger<QuitEvent>();
+      }
+      
+      // auto view = registry.view<MeshRenderer, Spatial>();
+      // view.each([](auto &mesh_renderer, auto &spatial){
+        // interface with the graphics library and render the mesh
+      // });
+    }
 };
