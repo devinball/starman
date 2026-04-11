@@ -16,7 +16,7 @@ struct Application {
 
     context.dispatcher.sink<QuitEvent>().connect<&Application::quit>(this);
 
-    while (running) {
+    while (true) {
       // start main loop
       systemRegistry.update(context, 0.016f);
       // start render loop

@@ -1,3 +1,5 @@
 .cpm-cache
+.vcpkg-installed
+.vcpkg-downloads
 build
 compile_commands.json

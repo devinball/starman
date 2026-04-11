@@ -1,4 +1,4 @@
-#pragma once
+/*#pragma once
 
 #include <SDL3/SDL.h>
 
@@ -23,28 +23,6 @@ SDLContext createSDLContext() {
   return context;
 }
 
-void renderModel() {
-  // draw a model at a specific location
-}
-
-void renderMesh() {
-  // draws a mesh, default with wireframe, can specify material/shader
-  // assumes pre-rotated mesh?
-}
-
-void renderTexture() {
-  // draw texture with parameters x, y, width, height, texture
-}
-
-void renderShader() {
-  // treat the entire screen as output
-
-}
-
-void clear() {
-
-}
-
 void destroySDLContext(SDLContext& ctx) {
 
 }
@@ -62,3 +40,4 @@ bool pollSDLEvents(SDLContext& ctx) {
 
   return quit;
 }
+*/

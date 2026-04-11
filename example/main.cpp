@@ -1,6 +1,6 @@
-#include "core/application.hpp"
+#include <entt/entt.hpp>
 
-    #include <SDL3/SDL.h>
+#include "core/application.hpp"
 
 int main() {
     printf("\n-----STARTING-----\n\n");
@@ -9,9 +9,10 @@ int main() {
 
     app.run();
 
+    printf("\n-----ENDING-----\n\n");
+
     return 0;
 }
-
 
 
 /*

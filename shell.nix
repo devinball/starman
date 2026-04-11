@@ -70,27 +70,29 @@ pkgs.mkShell {
   shellHook = ''
     export CC=gcc
     export CXX=g++
-
     export LDFLAGS="-fuse-ld=mold"
     export CPM_SOURCE_CACHE="$PWD/.cpm-cache"
-
-
-    export LD_LIBRARY_PATH="${pkgs.libGL}/lib:${pkgs.mesa}/lib:${pkgs.vulkan-loader}/lib:${pkgs.gcc14.cc.lib}/lib:${pkgs.wayland}/lib:${pkgs.libffi}/lib:${pkgs.xorg.libX11}/lib:${pkgs.xorg.libXext}/lib:${pkgs.xorg.libXrandr}/lib:${pkgs.xorg.libXi}/lib:${pkgs.xorg.libXcursor}/lib:${pkgs.xorg.libxcb}/lib:${pkgs.libxkbcommon}/lib:$LD_LIBRARY_PATH"
-
-    # pkg-config paths — libffi is needed by wayland-client
-    export PKG_CONFIG_PATH="${pkgs.libffi.dev}/lib/pkgconfig:${pkgs.wayland.dev}/lib/pkgconfig:${pkgs.wayland-protocols}/share/pkgconfig:${pkgs.xorg.libxcb.dev}/lib/pkgconfig:${pkgs.vulkan-headers}/lib/pkgconfig:$PKG_CONFIG_PATH"
-
     export CLANGD_FLAGS="--compile-commands-dir=$PWD"
 
-    echo ""
-    echo "  engine dev shell"
-    echo "  ─────────────────────────────────────────────"
-    echo "  CC=$CC  CXX=$CXX"
-    echo "  cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug"
-    echo "  cmake --build build -j\$(nproc)"
-    echo ""
-    echo "  To use clang:  export CC=clang CXX=clang++"
-    echo "  Sanitizers:    cmake -G Ninja -B build-asan -DENGINE_SANITIZE=ON -DCMAKE_BUILD_TYPE=Debug"
-    echo ""
+    export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath [
+      pkgs.stdenv.cc.cc.lib
+      pkgs.mesa
+      pkgs.vulkan-loader
+      pkgs.gcc14.cc.lib
+      pkgs.wayland
+      pkgs.libffi
+      pkgs.libffi.dev
+      pkgs.wayland.dev
+      pkgs.wayland-protocols
+      pkgs.xorg.libxcb
+      pkgs.xorg.libxcb.dev
+      pkgs.libGL
+      pkgs.libGLU
+      pkgs.xorg.libX11
+      pkgs.xorg.libXrandr
+      pkgs.xorg.libXinerama
+      pkgs.xorg.libXi
+      pkgs.xorg.libXcursor
+    ]}:$LD_LIBRARY_PATH
   '';
 }
