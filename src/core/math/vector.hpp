@@ -2,158 +2,119 @@
 
 #include "core/math/number.hpp"
 
-struct BigVector2 {
-    BigNumber x;
-    BigNumber y;
+template <typename T>
+struct Vector2T {
+    T x;
+    T y;
 
-    BigVector2 operator+(const BigVector2 &b) {
-
+    Vector2T operator+(const Vector2T &b) {
+        return Vector2T{x + b.x, y + b.y};
     }
 
-    BigVector2 operator-(const BigVector2 &b) {
-        
+    Vector2T operator-(const Vector2T &b) {
+        return Vector2T{x - b.x, y - b.y};
     }
 
-    BigVector2 operator/(const Number &b) {
-        
+    Vector2T operator/(const T &b) {
+        return Vector2T{x / b, y / b};
     }
 
-    BigVector2 operator*(const Number &b) {
-        
+    Vector2T operator*(const T &b) {
+        return Vector2T{x * b, y * b};
     }
 
-    BigVector2 operator*(const BigVector2 &b) {
-        
-    }
-};
-
-struct BigVector3 {
-    BigNumber x;
-    BigNumber y;
-    BigNumber z;
-
-    BigVector3 operator+(const BigVector3 &b) {
-
+    Vector2T normalized() {
+        return Vector2T{x, y} / magnitude();
     }
 
-    BigVector3 operator-(const BigVector3 &b) {
-        
+    T dot(const Vector2T &b) {
+        return x * b.x + y * b.y;
     }
-
-    BigVector3 operator/(const Number &b) {
-        
-    }
-
-    BigVector3 operator*(const Number &b) {
-        
-    }
-
-    BigVector3 operator*(const BigVector3 &b) {
-        
+    
+    T magnitude() {
+        return sqrt(x*x + y*y);
     }
 };
 
-struct BigVector4 {
-    BigNumber x;
-    BigNumber y;
-    BigNumber z;
-    BigNumber w;
+template <typename T>
+struct Vector3T {
+    T x;
+    T y;
+    T z;
 
-    BigVector4 operator+(const BigVector4 &b) {
-
+    Vector3T operator+(const Vector3T &b) {
+        return Vector3T{x + b.x, y + b.y, z + b.z};
     }
 
-    BigVector4 operator-(const BigVector4 &b) {
-        
+    Vector3T operator-(const Vector3T &b) {
+        return Vector3T{x - b.x, y - b.y, z - b.z};
     }
 
-    BigVector4 operator/(const Number &b) {
-        
+    Vector3T operator/(const T &b) {
+        return Vector3T{x / b, y / b, z / b};
     }
 
-    BigVector4 operator*(const Number &b) {
-        
+    Vector3T operator*(const T &b) {
+        return Vector3T{x * b, y * b, z * b};
     }
 
-    BigVector4 operator*(const BigVector4 &b) {
-        
-    }
-};
-
-struct Vector2 {
-    Number x;
-    Number y;
-
-    Vector2 operator+(const Vector2 &b) {
-
+    Vector3T normalized() {
+        return Vector3T{x, y, z} / magnitude();
     }
 
-    Vector2 operator-(const Vector2 &b) {
-        
+    Vector3T cross(const Vector3T &b) {
+        return Vector3T{y * b.z - z * b.y, z * b.x - x * b.z, x * b.y - y * b.x};
     }
 
-    Vector2 operator/(const Number &b) {
-        
+    T dot(const Vector3T &b) {
+        return x * b.x + y * b.y + z * b.z;
     }
 
-    Vector2 operator*(const Number &b) {
-        
-    }
-
-    Vector2 operator*(const Vector2 &b) {
-        
+    T magnitude() {
+        return sqrt(x*x + y*y + z*z);
     }
 };
 
-struct Vector3 {
-    Number x;
-    Number y;
-    Number z;
+template <typename T>
+struct Vector4T {
+    T x;
+    T y;
+    T z;
+    T w;
 
-    Vector3 operator+(const Vector3 &b) {
-
+    Vector4T operator+(const Vector4T &b) {
+        return Vector4T{x + b.x, y + b.y, z + b.z, w + b.w};
     }
 
-    Vector3 operator-(const Vector3 &b) {
-        
+    Vector4T operator-(const Vector4T &b) {
+        return Vector4T{x - b.x, y - b.y, z - b.z, w + b.w};
     }
 
-    Vector3 operator/(const Number &b) {
-        
+    Vector4T operator/(const T &b) {
+        return Vector4T{x / b, y / b, z / b, w / b};
     }
 
-    Vector3 operator*(const Number &b) {
-        
+    Vector4T operator*(const T &b) {
+        return Vector4T{x * b, y * b, z * b, w * b};
     }
 
-    Vector3 operator*(const Vector3 &b) {
-        
-    }
-};
-
-struct Vector4 {
-    Number x;
-    Number y;
-    Number z;
-    Number w;
-
-    Vector4 operator+(const Vector4 &b) {
-
+    Vector4T normalized() {
+        return Vector4T{x, y, z, w} / magnitude();
     }
 
-    Vector4 operator-(const Vector4 &b) {
-        
+    T dot(const Vector4T &b) {
+        return x * b.x + y * b.y + z * b.z + w * b.w;
     }
 
-    Vector4 operator/(const Number &b) {
-        
-    }
-
-    Vector4 operator*(const Number &b) {
-        
-    }
-
-    Vector4 operator*(const Vector4 &b) {
-        
+    T magnitude() {
+        return sqrt(x*x + y*y + z*z + w*w);
     }
 };
+
+using Vector2 = Vector2T<Number>;
+using Vector3 = Vector3T<Number>;
+using Vector4 = Vector4T<Number>;
+
+using Vector2F = Vector2T<float>;
+using Vector3F = Vector3T<float>;
+using Vector4F = Vector4T<float>;

@@ -1,11 +1,14 @@
-#include <entt/entt.hpp>
-
 #include "core/application.hpp"
+#include "iostream"
 
 int main() {
     printf("\n-----STARTING-----\n\n");
 
     auto app = Application{};
+
+    // may need to add layers for UI (via IMGUI)
+    // add entities to the scene
+    // add systems for gravity, thrust, navigation, trajectories, etc
 
     app.run();
 

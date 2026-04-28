@@ -25,7 +25,7 @@ pkgs.mkShell {
     # ---- Debuggers / profilers ----
     gdb
     valgrind
-    linuxPackages.perf
+    perf
 
     # ---- System libraries SDL3 needs on Linux ----
     xorg.libX11
@@ -55,6 +55,9 @@ pkgs.mkShell {
     udev
     alsa-lib
     pipewire
+    glfw
+    glm
+    glew
 
     # ---- Nix dev tooling ----
     nixpkgs-fmt
@@ -65,6 +68,7 @@ pkgs.mkShell {
     cacert
     jq
     python3
+    python313Packages.glad
   ];
 
   shellHook = ''
@@ -93,6 +97,8 @@ pkgs.mkShell {
       pkgs.xorg.libXinerama
       pkgs.xorg.libXi
       pkgs.xorg.libXcursor
+      pkgs.zlib
+      pkgs.glfw
     ]}:$LD_LIBRARY_PATH
   '';
 }

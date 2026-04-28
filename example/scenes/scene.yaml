@@ -1,0 +1,10 @@
+entities:
+  - entity1: # name does not actually matter
+    - Spatial:
+      position: [10, 10, 10]
+    - MeshRenderer:
+      mesh_source: models/ship.gltf
+      material_source: materials/ship.mat
+    - Rigidbody
+    - Tag:
+      name: Ship

@@ -1,8 +1,11 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include "core/command_buffer.hpp"
+#include "core/resource_pool.hpp"
+#include "ecs/ecs.hpp"
 
 struct Context {
-  entt::registry registry;
-  entt::dispatcher dispatcher;
+  CommandBuffer* commandBuffer;
+  ResourcePool* resourcePool;
+  Registry* registry;
 };

@@ -1,52 +1,28 @@
 #pragma once
 
-using Number = float; // used to define basic precision
-const float MAX_FLOATING_VALUE = 4000;// 4 km if measured in meters, yes that is pathetic, which is why big number exists
+// this file abstracts away details of multi precision numbers
+// Numbers can be used just like normal numbers, with math functions and whatnot
 
-// also implement all sorts of operator overiding, so you can do BigNumber + float, BigNumber * double, BigNumber / int, etc...
-// with 4k as floating max, this should be able the handle ~7.8*10^9 light years, which should be plenty
-// using a normal long would only be ~1.8 light years, which also likely would be fine
-struct BigNumber {
-    long long multiplier;
-    Number floating;
+#include <boost/multiprecision/cpp_bin_float.hpp>
 
-    BigNumber operator=(const BigNumber &n) {
-        return BigNumber{};
-    }
+using Number = boost::multiprecision::cpp_bin_float_50; // probably too big
 
-    BigNumber operator+(const BigNumber &n) {
-        return BigNumber{};
-    }
+Number sin(Number x) {
+    return boost::multiprecision::sin(x);
+}
 
-    BigNumber operator-(const BigNumber &n) {
-        return BigNumber{};
-    }
+Number cos(Number x) {
+    return boost::multiprecision::cos(x);
+}
 
-    BigNumber operator*(const BigNumber &n) {
-        return BigNumber{};
-    }
+Number tan(Number x) {
+    return boost::multiprecision::tan(x);
+}
 
-    BigNumber operator/(const BigNumber &n) {
-        return BigNumber{};
-    }
+Number sqrt(Number x) {
+    return boost::multiprecision::sqrt(x);
+}
 
-    BigNumber operator+=(const BigNumber &n) {
-        return BigNumber{};
-    }
-
-    BigNumber operator-=(const BigNumber &n) {
-        return BigNumber{};
-    }
-
-    BigNumber operator*=(const BigNumber &n) {
-        return BigNumber{};
-    }
-
-    BigNumber operator/=(const BigNumber &n) {
-        return BigNumber{};
-    }
-
-    bool operator==(const BigNumber &n) {
-        return (multiplier == n.multiplier) && (floating == n.floating);
-    }
-};
+Number pow(Number a, Number b) {
+    return boost::multiprecision::pow(a, b);
+}

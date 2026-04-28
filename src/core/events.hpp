@@ -1,5 +1,7 @@
 #pragma once
 
-struct QuitEvent {
+struct Event {};
+
+struct QuitEvent : Event {
   bool requested = false;
 };

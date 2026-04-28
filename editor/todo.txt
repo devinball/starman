@@ -1,0 +1,5 @@
+editor is really more like a debugger
+the game is defined with code, so no editor is needed
+the editor can tell you stuff about your game though
+for example it can list all entities, as well as display info
+about the entity's components.
