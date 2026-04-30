@@ -1,80 +1,43 @@
-#include "core/application.hpp"
+//#include "core/application.hpp"
 #include "iostream"
+
+#include "core/layers/render/opengl/opengl_renderer.hpp"
+
+#include <chrono>
 
 int main() {
     printf("\n-----STARTING-----\n\n");
 
-    auto app = Application{};
+    auto renderer = OpenGLRenderer{};
+    auto resourcePool = ResourcePool{};
+    renderer.resourcePool = &resourcePool;
+
+    renderer.init({800, 600, "engine"}, nullptr);
+
+    while (!renderer.shouldClose()) {
+        auto start = std::chrono::system_clock::now();
+        renderer.beginFrame();
+        renderer.render();
+        renderer.endFrame();
+        auto end = std::chrono::system_clock::now();
+
+        std::chrono::duration<double> elapsed_seconds = end-start;
+
+        std::cout << elapsed_seconds.count() << std::endl;
+    }
+
+    renderer.shutdown();
+
+    //auto app = Application{};
+    //app.run();
 
     // may need to add layers for UI (via IMGUI)
     // add entities to the scene
     // add systems for gravity, thrust, navigation, trajectories, etc
 
-    app.run();
+    
 
     printf("\n-----ENDING-----\n\n");
 
     return 0;
 }
-
-
-/*
-
-// -- SYSTEMS --
-
-
-
-// a prefab is a pre-made entity for easy instantiating, can be instantiated into a scene via the prefab api
-struct Prefab {}
-
-// abstract away all the rendering stuff into it's own little corner, completely library/api agnostic
-// render will take in either a scene or a series of scenes
-struct Renderer {
-    void render();
-}
-
-struct EntityManager {
-    public:
-        EntityManager() {
-            for (Entity entity = 0; entity < MAX_ENTITIES, ++entity) {
-                availableEntites.push(entity)
-            }
-        }
-
-        Entity CreateEntity() {
-            assert(livingEntityCount < MAX_ENTITIES && "Too many entities!");
-
-            Entity id = availableEntites.front();
-            availableEntites.pop();
-            ++livingEntityCount;
-
-            return id;
-        }
-
-        void DestroyEntity();
-        void SetSignature();
-        Signature GetSignature();
-    private:
-        std::queue<Entity> availableEntites{};
-        std::array<Signature, MAX_ENTITIES> signatures{};
-        uint32_t livingEntityCount{};
-}
-
-// lua - component system
-
-return {
-    component = {
-        position; // can i do any sort of typing?
-        velocity;
-    },
-    system = {
-        init = function(entity, component)
-
-        end
-        loop = function(entity, component)
-            component.position = component.position + component.velocity
-        end  
-    },
-}
-
-*/

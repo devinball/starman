@@ -118,3 +118,7 @@ using Vector4 = Vector4T<Number>;
 using Vector2F = Vector2T<float>;
 using Vector3F = Vector3T<float>;
 using Vector4F = Vector4T<float>;
+
+using Vector2I = Vector2T<int>;
+using Vector3I = Vector3T<int>;
+using Vector4I = Vector4T<int>;

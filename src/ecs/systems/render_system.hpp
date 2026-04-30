@@ -60,6 +60,9 @@ struct RenderSystem : System {
     void draw() {
       t += 0.01;
       auto view = context.registry->view<MeshRenderer, Spatial>();
+
+      // need to determine culling
+
       view.each([this](auto &mesh_renderer, auto &spatial){
         DrawCommand cmd = {
           0,

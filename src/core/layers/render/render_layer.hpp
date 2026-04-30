@@ -5,7 +5,7 @@
 #include "core/layers/layer.hpp"
 #include "core/math/matrix.hpp"
 #include "core/layers/render/renderer.hpp"
-#include "core/layers/render/opengl/opengl.hpp"
+#include "core/layers/render/opengl/opengl_renderer.hpp"
 #include "core/context.hpp"
 
 #include <memory>
@@ -13,33 +13,18 @@
 
 // --- LLM WRITTEN ---
 // also i need to move this function somewhere better
-Matrix4x4F perspective_projection(
-    float fovy_radians,
-    float aspect_ratio,
-    float near_plane,
-    float far_plane
-) {
+Matrix4x4F perspective_projection(float fovy_radians, float aspect_ratio, float near_plane, float far_plane) {
+  Matrix4x4F result;
 
-    Matrix4x4F result;
+  const float tan_half_fovy = std::tan(fovy_radians / 2);
 
-    const float tan_half_fovy = std::tan(fovy_radians / 2);
+  result(0, 0) = 1 / (aspect_ratio * tan_half_fovy);
+  result(1, 1) = 1 / tan_half_fovy;
+  result(2, 2) = - (far_plane + near_plane) / (far_plane - near_plane);
+  result(2, 3) = - 1;
+  result(3, 2) = - (2 * far_plane * near_plane) / (far_plane - near_plane);
 
-    result(0, 0) = 1 / (aspect_ratio * tan_half_fovy);
-    result(1, 1) = 1 / tan_half_fovy;
-    result(2, 2) = - (far_plane + near_plane) / (far_plane - near_plane);
-    result(2, 3) = - 1;
-    result(3, 2) = - (2 * far_plane * near_plane) / (far_plane - near_plane);
-
-    // Set remaining elements to 0
-    for (uint8_t i = 0; i < 4; ++i) {
-        for (uint8_t j = 0; j < 4; ++j) {
-            if (i != j && !(i == 2 && j == 3) && !(i == 3 && j == 2)) {
-                result(i, j) = 0;
-            }
-        }
-    }
-
-    return result;
+  return result;
 }
 
 struct RenderLayer : Layer {
@@ -55,25 +40,18 @@ struct RenderLayer : Layer {
 
     void draw() {
       t += 0.01;
-      Matrix4x4F m1({
+      Vector2I size = renderer->getSize();
+
+      Matrix4x4F transform({
           1, 0, 0, 0,
           0, 1, 0, 0,
           0, 0, 1, 0,
           0, -2, -t, 1
       });
 
-      Matrix4x4F projection = perspective_projection(
-          3.1515926f / 3.0f, // 60 degrees in radians
-          1280.0f / 720.0f, // aspect ratio
-          0.1f, // near plane
-          1000.0f // far plane
-      );
+      Matrix4x4F projection = perspective_projection(3.1515926f / 3.0f, float(size.x) / float(size.y), 0.1f, 1000.0f);
 
-      Camera cam(
-        m1,
-        projection,
-        RenderTarget{}
-      );
+      Camera cam(transform, projection, RenderTarget{});
 
       const std::vector<Camera> cameras = {cam};
 

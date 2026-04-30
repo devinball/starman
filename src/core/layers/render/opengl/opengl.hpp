@@ -7,6 +7,7 @@
 #include "core/resources/image.hpp"
 #include "core/resources/material.hpp"
 #include "core/resources/shader.hpp"
+#include "core/math/vector.hpp"
 
 #include "ecs/components/camera.hpp"
 
@@ -22,9 +23,6 @@
 #include <cstdio>
 #include <cstring>
 
-// ================================================================
-// Embedded default shaders — no files needed for basic testing
-// ================================================================
 namespace gl_detail {
 
 inline constexpr const char* VERT = R"glsl(
@@ -66,12 +64,8 @@ void main() {
 }
 )glsl";
 
-} // namespace gl_detail
+}
 
-// ================================================================
-// OpenGLRenderer
-// All GL types are private. Nothing leaks through the Renderer API.
-// ================================================================
 struct OpenGLRenderer : Renderer {
     void init(const WindowConfig& cfg, ResourcePool* p) override {
         pool = p;
@@ -109,6 +103,8 @@ struct OpenGLRenderer : Renderer {
 
         defaultProg = compileProgram(gl_detail::VERT, gl_detail::FRAG);
 
+        glfwSetWindowTitle(window, cfg.title);
+
         printf("[GL] %s  %dx%d\n", glGetString(GL_VERSION), cfg.width, cfg.height);
     }
 
@@ -122,12 +118,17 @@ struct OpenGLRenderer : Renderer {
         glfwTerminate();
     }
 
-    void beginFrame() override { glfwPollEvents(); }
-    void endFrame  () override { glfwSwapBuffers(window); }
+    void beginFrame() override {
+        glfwPollEvents();
+    }
 
-    bool        shouldClose() const override { return glfwWindowShouldClose(window); }
-    void        setTitle(const char* t) override { glfwSetWindowTitle(window, t); }
-    const char* backendName() const override { return "OpenGL 3.3"; }
+    void endFrame  () override {
+        glfwSwapBuffers(window);
+    }
+
+    bool shouldClose() override {
+        return glfwWindowShouldClose(window);
+    }
 
     RenderTarget createRenderTarget(uint32_t w, uint32_t h) override {
         Framebuffer fb{};
@@ -166,33 +167,26 @@ struct OpenGLRenderer : Renderer {
         rtCache.erase(it);
     }
 
-    // -------------------------------------------------------
-    // Render
-    // -------------------------------------------------------
-    void render(const std::vector<DrawCommand>& commands,
-                const std::vector<Camera>&      cameras,
-                const EvictionList&             evictions = {}) override
+    void render(const std::vector<DrawCommand>& commands, const std::vector<Camera>& cameras, const EvictionList& evictions = {}) override
     {
         processEvictions(evictions);
 
-        // Sort cameras by priority — copy is small (struct of matrices + a few ints)
         sortedCams.assign(cameras.begin(), cameras.end());
         std::sort(sortedCams.begin(), sortedCams.end(),
             [](const Camera& a, const Camera& b){ return a.priority < b.priority; });
 
-        // Sort commands once by key — all cameras share this sorted list
         sortedCmds.assign(commands.begin(), commands.end());
         std::sort(sortedCmds.begin(), sortedCmds.end(),
             [](const DrawCommand& a, const DrawCommand& b){ return a.key < b.key; });
 
-        for (const Camera& cam : sortedCams)
-            renderCamera(cam);
+        for (const Camera& cam : sortedCams) renderCamera(cam);
+    }
+
+    Vector2I getSize() {
+        return Vector2I(screenW, screenH);
     }
 
 private:
-    // -------------------------------------------------------
-    // Internal GPU types — never visible outside this file
-    // -------------------------------------------------------
     struct GpuMesh   { uint32_t vao=0, vbo=0, ebo=0, indexCount=0; };
     struct GpuTex    { uint32_t glId=0; };
     struct GpuShader { uint32_t prog=0; };
@@ -200,7 +194,6 @@ private:
         uint32_t fbo=0, colorTex=0, depthRbo=0, w=0, h=0;
     };
 
-    // Cached uniform locations for a given program
     struct UniformCache {
         GLint model      = -1;
         GLint view       = -1;
@@ -219,15 +212,11 @@ private:
     std::unordered_map<std::string, GpuTex>     texCache;
     std::unordered_map<std::string, GpuShader>  shaderCache;
     std::unordered_map<uint32_t,    Framebuffer> rtCache;
-    std::unordered_map<uint32_t,    UniformCache> uniformCache; // keyed by prog id
+    std::unordered_map<uint32_t,    UniformCache> uniformCache;
 
-    // Per-frame scratch — allocated once, reused every frame
     std::vector<Camera>      sortedCams;
     std::vector<DrawCommand> sortedCmds;
 
-    // -------------------------------------------------------
-    // Per-camera pass
-    // -------------------------------------------------------
     void renderCamera(const Camera& cam) {
         if (cam.target.isValid()) {
             auto it = rtCache.find(cam.target.id);
@@ -249,9 +238,9 @@ private:
         glm::mat4 view = toGlm(cam.view);
         glm::mat4 proj = toGlm(cam.projection);
 
-        std::string boundMatId = "\x01";  // guaranteed never to match any real resource id
+        std::string boundMatId = "\x01";
         uint32_t    activeProg = bindDefaultMaterial();
-        const UniformCache* uc = &getUniforms(activeProg);
+        UniformCache uc = getUniforms(activeProg);
 
         for (const DrawCommand& cmd : sortedCmds) {
             if (!(cam.layerMask & (1u << cmd.layer))) continue;
@@ -262,21 +251,18 @@ private:
             if (!meshCache.count(mesh->getId())) uploadMesh(*mesh);
             GpuMesh& gm = meshCache[mesh->getId()];
 
-            // Rebind material only when it changes
+
             const std::string matId = cmd.material.isValid() ? cmd.material.getId() : "";
             if (matId != boundMatId) {
                 activeProg = bindMaterial(cmd.material);
-                uc         = &getUniforms(activeProg);
-                // Upload view+projection here — they're constant per camera pass
-                glUniformMatrix4fv(uc->view,       1, GL_FALSE, glm::value_ptr(view));
-                glUniformMatrix4fv(uc->projection, 1, GL_FALSE, glm::value_ptr(proj));
+                uc         = getUniforms(activeProg);  // copy, not pointer
+                glUniformMatrix4fv(uc.view,       1, GL_FALSE, glm::value_ptr(view));
+                glUniformMatrix4fv(uc.projection, 1, GL_FALSE, glm::value_ptr(proj));
                 boundMatId = matId;
             }
 
-            // Per-draw model matrix
             glm::mat4 model = toGlm(cmd.transform);
-            glUniformMatrix4fv(uc->model, 1, GL_FALSE, glm::value_ptr(model));
-
+            glUniformMatrix4fv(uc.model, 1, GL_FALSE, glm::value_ptr(model));
             glBindVertexArray(gm.vao);
             glDrawElements(GL_TRIANGLES, gm.indexCount, GL_UNSIGNED_INT, nullptr);
         }
@@ -297,9 +283,6 @@ private:
         return uniformCache[prog];
     }
 
-    // -------------------------------------------------------
-    // Material binding — returns active program id
-    // -------------------------------------------------------
     uint32_t bindMaterial(const Handle<Material>& handle) {
         if (!handle.isValid()) return bindDefaultMaterial();
 
@@ -342,7 +325,6 @@ private:
           ++unit; hasTex = true;
       }
 
-        // Set defaults for built-in uniforms if not overridden by material
         if (!mat->vectors.count("uColor")) {
             GLint loc = glGetUniformLocation(prog, "uColor");
             if (loc >= 0) glUniform4f(loc, 1,1,1,1);
@@ -361,9 +343,6 @@ private:
         return defaultProg;
     }
 
-    // -------------------------------------------------------
-    // Lazy GPU uploads
-    // -------------------------------------------------------
     void uploadMesh(const Mesh& mesh) {
         const size_t n = mesh.vertices.size();
         std::vector<float> verts;
@@ -386,12 +365,10 @@ private:
         glBindVertexArray(vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER,
-            verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(float), verts.data(), GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-            mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(), GL_STATIC_DRAW);
 
         constexpr GLsizei S = 8 * sizeof(float);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, S, (void*)0);
@@ -441,9 +418,6 @@ private:
         shaderCache[shader.getId()] = { compileProgram(shader.vertexSrc, shader.fragmentSrc) };
     }
 
-    // -------------------------------------------------------
-    // Eviction
-    // -------------------------------------------------------
     void processEvictions(const EvictionList& ev) {
         for (auto& id : ev.meshIds) {
             auto it = meshCache.find(id);
@@ -463,9 +437,6 @@ private:
         }
     }
 
-    // -------------------------------------------------------
-    // Shader compilation
-    // -------------------------------------------------------
     uint32_t compileProgram(const std::string& vertSrc, const std::string& fragSrc) {
         auto compileStage = [](const std::string& src, GLenum type) -> uint32_t {
             uint32_t id = glCreateShader(type);
@@ -499,9 +470,6 @@ private:
         return prog;
     }
 
-    // -------------------------------------------------------
-    // Cleanup
-    // -------------------------------------------------------
     void freeMesh(const GpuMesh& m) {
         glDeleteVertexArrays(1, &m.vao);
         glDeleteBuffers(1, &m.vbo);
@@ -514,11 +482,6 @@ private:
         glDeleteRenderbuffers(1, &fb.depthRbo);
     }
 
-    // -------------------------------------------------------
-    // Math
-    // Assumes Matrix4x4F::getData() returns float[16] column-major.
-    // If row-major: return glm::transpose(glm::make_mat4(...))
-    // -------------------------------------------------------
     glm::mat4 toGlm(const Matrix4x4F& m) const {
         return glm::make_mat4(m.getData().data());
     }

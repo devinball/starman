@@ -30,7 +30,7 @@ struct SceneLayer : Layer {
   public:
     void init() {
       // TODO: !!!! SERIOUS PERFORMANCE ISSUES WITH MANY MESHES
-      int n = 10;
+      int n = 20;
       for (int x = 0; x < n; ++x) {
         for (int y = 0; y < n; ++y) {
           Entity e = context.registry->create();
