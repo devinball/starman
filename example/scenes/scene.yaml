@@ -1,10 +1,37 @@
+# i think i want to use a cartesian version of
+# the galactic coordinate system, which is centered
+# at our sun
+
 entities:
   - entity1: # name does not actually matter
     - Spatial:
-      position: [10, 10, 10]
+      position: [1000, 1000, 1000]
     - MeshRenderer:
       mesh_source: models/ship.gltf
       material_source: materials/ship.mat
-    - Rigidbody
+    - Rigidbody:
+        mass: 1000
+        velocity: [0, 0, 0]
     - Tag:
-      name: Ship
+        name: Ship
+  - entity2:
+    - Spatial:
+        position: [0, 0, 0]
+    - MeshRenderer:
+        mesh_source: DEFAULT_SPHERE
+        material_source: materials/ship.mat
+    -FixedOrbit:
+      apoapsis: 100
+      periapsis: 100
+      eccentricity: 100
+      semi_major_axis: 100
+      semi_minor_axis: 100
+      semi_parameter: 100
+
+    - Star:
+        luminous_intensity: 1000,
+        type: red_dwarf
+        mass: 10*10^100 # all these numbers are just made up btw
+    - Tag:
+        name: Star1
+

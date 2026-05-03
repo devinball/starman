@@ -1,12 +1,8 @@
 #pragma once
 
-#include <xcb/xcb.h>
-
-#include "math.h"
-#include "ecs/ecs.hpp"
 #include "core/math/constants.hpp"
-#include "core/math/number.hpp"
 #include "core/math/vector.hpp"
+#include "ecs/system.hpp"
 
 #include "components/rigidbody.hpp"
 #include "components/spatial.hpp"
@@ -23,8 +19,15 @@ struct PhysicsSystem : System {
     void init(Context& context) {
     }
 
-    void update(Context& context, float dt) {
+    void update() {
       auto view = context.registry.view<Rigidbody, Spatial>();
+
+      view.each([](auto &rigidbody, auto &spatial){
+        // TODO: collision check
+        spatial.position += spatial.velocity * context.dt;
+      });
+
+      /*
       view.each([](auto &rigidbody, auto &spatial) {
         Vector3 force = {0, 0, 0};
         view.each([](auto &rigidbody2, auto &spatial2) {
@@ -35,5 +38,6 @@ struct PhysicsSystem : System {
         // a = G * m_2 / r^2
         rigidbody.velocity += force / dt;
       });
+      */
     }
 };

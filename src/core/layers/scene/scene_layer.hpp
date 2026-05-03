@@ -6,11 +6,10 @@
 #include "ecs/ecs.hpp"
 #include "core/context.hpp"
 #include "core/resources/scene.hpp"
-#include "ecs/ecs.hpp"
-
 #include "ecs/components/spatial.hpp"
 #include "ecs/components/mesh_renderer.hpp"
 #include "ecs/systems/render_system.hpp"
+#include "core/math/utilities.hpp"
 
 #include <memory>
 #include <vector>
@@ -31,15 +30,16 @@ struct SceneLayer : Layer {
     void init() {
       // TODO: !!!! SERIOUS PERFORMANCE ISSUES WITH MANY MESHES
       int n = 20;
-      for (int x = 0; x < n; ++x) {
-        for (int y = 0; y < n; ++y) {
-          Entity e = context.registry->create();
-          context.registry->emplace<Spatial>(e, Vector3{2 * x - float(n) * 0.5, 0, 2 * y - float(n) * 0.5}, Vector3{1, 1, 1}, euler_angles_to_quat(x, y, 0));
-          Handle<Mesh> mesh = context.resourcePool->load<Mesh>("example/models/frog.stl");
-          Handle<Material> material = Handle<Material>();//context.resourcePool->load<Material>("example/models/frog.mat");
-          context.registry->emplace<MeshRenderer>(e, mesh, material);
-        }
+      float d = 0.5;
+      for (int i = 0; i < 100; ++i) {
+        Entity e = context.registry->create();
+        context.registry->emplace<Spatial>(e, Vector3(std::sin(i * d) * std::sqrt(i) * d, 0, std::cos(i * d) * std::sqrt(i) * d), Vector3{1, 1, 1}, eulerToQuat(i, 0, 0));
+        Handle<Mesh> mesh = context.resourcePool->load<Mesh>("example/models/frog.stl");
+        Handle<Material> material = Handle<Material>();//context.resourcePool->load<Material>("example/models/frog.mat");
+        context.registry->emplace<MeshRenderer>(e, mesh, material);
       }
+
+      
       addSystem<RenderSystem>();
 
       for (auto& system : systems) {

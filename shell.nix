@@ -26,6 +26,7 @@ pkgs.mkShell {
     gdb
     valgrind
     perf
+    mangohud
 
     # ---- System libraries SDL3 needs on Linux ----
     xorg.libX11

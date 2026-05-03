@@ -16,3 +16,12 @@ public:
 
     bool operator==(const Handle&) const = default;
 };
+
+/*
+template <typename T>
+struct std::hash<Handle<T>> {
+    std::size_t operator()(const Handle<T> h) const {
+        return (std::hash<string>()h.getId());
+    }
+};
+*/

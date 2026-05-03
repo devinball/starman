@@ -76,20 +76,3 @@ struct QuaternionT {
 
 using Quaternion = QuaternionT<Number>;
 using QuaternionF = QuaternionT<float>;
-
-QuaternionF euler_angles_to_quat(float pitch, float yaw, float roll) {
-    // Abbreviations for the various angular functions
-    float cy = std::cos(yaw * 0.5f);
-    float sy = std::sin(yaw * 0.5f);
-    float cp = std::cos(pitch * 0.5f);
-    float sp = std::sin(pitch * 0.5f);
-    float cr = std::cos(roll * 0.5f);
-    float sr = std::sin(roll * 0.5f);
-
-    return QuaternionF(
-        cr * cp * cy + sr * sp * sy,
-        sr * cp * cy - cr * sp * sy,
-        cr * sp * cy + sr * cp * sy,
-        cr * cp * sy - sr * sp * cy
-    );
-}

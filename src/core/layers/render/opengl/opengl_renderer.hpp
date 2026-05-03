@@ -1,7 +1,8 @@
 #pragma once
 
-#include "core/layers/render/renderer.hpp"
+#include "core/renderer.hpp"
 #include "core/resources/mesh.hpp"
+#include "core/math/utilities.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -12,18 +13,16 @@
 
 inline constexpr const char* defaultVertexShader = R"glsl(
 #version 330 core
-layout (location = 0) in vec3 aPos;
+layout (location = 0) in vec3 aVertex;
 layout (location = 1) in vec3 aNormal;
+layout (location = 2) in vec2 aUv;
+layout (location = 3) in mat4 aTransform;
 
 out vec3 vNormal;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-
 void main() {
-  gl_Position = projection * view * model * vec4(aPos, 1.0f);
-  vNormal = aNormal;
+  gl_Position = aTransform * vec4(aVertex, 1.0f);
+  vNormal = normalize(mat3(aTransform) * aNormal);;
 }
 )glsl";
 
@@ -31,17 +30,27 @@ inline constexpr const char* defaultFragmentShader = R"glsl(
 #version 330 core
 in vec3 vNormal;
 
-out vec4 FragColor;
+out vec4 fragColor;
 
 void main() {
-  vec3 L = normalize(vec3(0.6, 1.0, 0.4));
-  float light = 0.25 + 0.75 * max(dot(normalize(vNormal), L), 0.0);
-  vec4 base = vec4(0.2, 1.0, 0.1, 1.0);
-  FragColor = vec4(vNormal.rgb * light, base.a);
+  float ambient = 0.1;
+  vec3  L       = normalize(vec3(0.6, 1.0, 0.4));
+  float diffuse = max(dot(normalize(vNormal), L), 0.0);
+  float light   = ambient + (1 - ambient) * diffuse;
+  vec4  base    = vec4(1.0, 1.0, 1.0, 1.0);
+  fragColor     = vec4(base.rgb * light, base.a);
+
+  // fragColor = vec4(vNormal.rgb, 1.0);
 }
 )glsl";
 
-glm::mat4 toGlm(Matrix4x4F mat) {
+inline constexpr const char* defaultShader = R"glsl(
+
+)glsl";
+        
+    
+
+glm::mat4 toGlm(Matrix4x4F& mat) {
   return glm::make_mat4(mat.getData().data());
 }
 
@@ -58,16 +67,23 @@ struct OpenGLRenderer : Renderer {
       }
     }
 
+    uint maxInstances = 10000;
+
+    struct GPUMesh {
+      uint VBO, VAO, EBO, numVerts, instanceVBO;
+    };
+
+    // handle id -> GPUMesh  TODO: i should really just write a hash for handle
+    std::unordered_map<std::string, GPUMesh> meshCache;
+
     // shader cache
     // mesh cache
     // material cache
 
-
   public:
-    ResourcePool* resourcePool;
-    CommandBuffer* commandBuffer;
+    uint shaderProgramId;
 
-    void init(const WindowSettings settings, ResourcePool *pool) {
+    void init(const WindowSettings settings) {
       framebufferWidth = settings.width;
       framebufferHeight = settings.height;
       
@@ -102,19 +118,27 @@ struct OpenGLRenderer : Renderer {
         glViewport(0, 0, framebufferWidth, framebufferHeight);
       });
 
-      setupthings();
+      glfwSwapInterval(0);
+
+      glEnable(GL_DEPTH_TEST);
+      glEnable(GL_CULL_FACE);
+      glCullFace(GL_BACK);
+      glFrontFace(GL_CCW);
+
+      // wireframe mode
+      // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+      shaderProgramId = compileShaderProgram(defaultVertexShader, defaultFragmentShader);
+
+      printf("Completed Setup\n");
     }
 
     void beginFrame() {
       processInput();
     }
 
-    uint fragmentShader, vertexShader, shaderProgramId;
-    uint VBO, VAO, EBO;
-    uint numVerts;
-
     uint compileShaderProgram(const char* vertex, const char* fragment) {
-      uint shaderProgram;
+      uint vertexShader, fragmentShader, shaderProgram;
       int success;
       char infoLog[512];
     
@@ -158,81 +182,75 @@ struct OpenGLRenderer : Renderer {
       return shaderProgram;
     }
 
-
-    uint projectionLocation, viewLocation, modelLocation, albedoLocation;
-    void setupthings() {
-      glEnable(GL_DEPTH_TEST);
-      glEnable(GL_CULL_FACE);
-      glCullFace(GL_FRONT);
-      glFrontFace(GL_CW);
-
-      shaderProgramId = compileShaderProgram(defaultVertexShader, defaultFragmentShader);
-
-      Handle<Mesh> meshHandle = resourcePool->load<Mesh>("example/models/frog.stl");
-
-      Mesh* mesh = resourcePool->get(meshHandle);
-
-      float scale = 1.f;
-
-      // mesh vertices is a vector of Vector3F, need to convert it into something OpenGL can understand
-      std::vector<float> vertices;
-
-      for (uint i = 0; i < mesh->vertices.size(); ++i) {
-        vertices.push_back(mesh->vertices[i].x);
-        vertices.push_back(mesh->vertices[i].y);
-        vertices.push_back(mesh->vertices[i].z);
-
-        vertices.push_back(mesh->normals[i].x);
-        vertices.push_back(mesh->normals[i].y);
-        vertices.push_back(mesh->normals[i].z);
-      }
-
-      numVerts = vertices.size();
-
-      glGenVertexArrays(1, &VAO);
-      glGenBuffers(1, &VBO);
-      glGenBuffers(1, &EBO);
-      
-      glBindVertexArray(VAO);
-
-      glBindBuffer(GL_ARRAY_BUFFER, VBO);
-      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices.size() * sizeof(uint32_t), mesh->indices.data(), GL_STATIC_DRAW);
-
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-      glEnableVertexAttribArray(0);
-      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(float)));
-      glEnableVertexAttribArray(1);
-
-      glBindBuffer(GL_ARRAY_BUFFER, 0);
-      glBindVertexArray(0);
-
-      // wireframe mode
-      // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-      projectionLocation = glGetUniformLocation(shaderProgramId, "projection");
-      viewLocation = glGetUniformLocation(shaderProgramId, "view");
-      modelLocation = glGetUniformLocation(shaderProgramId, "model");
-
-      printf("Completed Setup\n");
-    }
-
-    // load mesh, create VAO for it
-    void bindMesh(Handle<Mesh> meshHandle) {
-      Mesh* mesh = resourcePool->get(meshHandle);
-    }
-
     // load material, compile shaders if needed
     void bindMaterial(Handle<Material> materialHandle) {
       
     }
 
-    float t = 0.0;
+    void bindMesh(Handle<Mesh> meshHandle) {
+      if (meshCache.count(meshHandle.getId()) == 0) {
+        Mesh* mesh = resourcePool->get(meshHandle);
+
+        uint VAO, VBO, EBO;
+
+        std::vector<float> vertices;
+        for (uint i = 0; i < mesh->vertices.size(); ++i) {
+          vertices.push_back(mesh->vertices[i].x);
+          vertices.push_back(mesh->vertices[i].y);
+          vertices.push_back(mesh->vertices[i].z);
+
+          vertices.push_back(mesh->normals[i].x);
+          vertices.push_back(mesh->normals[i].y);
+          vertices.push_back(mesh->normals[i].z);
+
+          vertices.push_back(mesh->uvs[i].x);
+          vertices.push_back(mesh->uvs[i].y);
+        }
+
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+        
+        glBindVertexArray(VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices.size() * sizeof(uint32_t), mesh->indices.data(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
+        glEnableVertexAttribArray(2);
+
+        uint instanceVBO;
+        glGenBuffers(1, &instanceVBO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * maxInstances, nullptr, GL_DYNAMIC_DRAW);
+
+        for (int i = 0; i < 4; ++i) {
+          glEnableVertexAttribArray(3 + i);
+          glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * sizeof(glm::vec4)));
+          glVertexAttribDivisor(3 + i, 1);
+        }
+
+        // TODO, make sure numVerts should actually be indices and not vertices size
+        meshCache[meshHandle.getId()] = GPUMesh{VBO, VAO, EBO, (uint)mesh->indices.size(), instanceVBO};
+
+        // TODO: if shader is the same as the previous one don't rebind
+        // TODO: this should really be in render() with the check
+        glUseProgram(shaderProgramId);
+
+        printf("Loaded mesh to gpu\n");
+      }
+    }
 
     void render() {
-      //const std::vector<DrawCommand> &commands
+      // const std::vector<DrawCommand> &commands
       // before anything else, the render system
       // and render layer need to construct
       // the command buffer, which includes
@@ -252,43 +270,41 @@ struct OpenGLRenderer : Renderer {
       // things like shadows are rendered.
       // then we do post processing
 
-      /*
-      for (auto command : commandBuffer->getCommands()) {
-        uint vertexArray;
-        if (true) { // if mesh is not already cached
-          Mesh* mesh = resourcePool->get(command.mesh);
-          vertexArray = 0; // something
-        }
-
-        // load these from the mesh?
-        vertices = []
-      }
-      */
-
       glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-      glUseProgram(shaderProgramId);
+      // compute these matrices only once, if i wanted to i could even cache these in between frames
+      // and only update when i know something has changed, but i doubt that would make too much of a
+      // difference anyways.
+      glm::mat4 projection = glm::perspective(glm::radians(45.f), (float)framebufferWidth/(float)framebufferHeight, 0.1f, 1000.f);
+      glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 25.0f, 0.1f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-      t += 0.25;
-      
-      glBindVertexArray(VAO);
+      // V_clip = M_proj * M_view * M_model * V_local
 
-      glm::mat4 projection = glm::perspective(glm::radians(90.f), (float)framebufferWidth/(float)framebufferHeight, 0.1f, 1000.f);
-      glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 15.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+      sceneGraph->eachModel(identityMatrix4x4F(), [&](Handle<Mesh> meshHandle, Handle<Material> materialHandle, std::vector<Matrix4x4F>& transforms) {
+        int numInstances = transforms.size();
 
-      for (int x = -10; x < 10; x++) {
-        for (int y = -10; y < 10; y++) {
-          glm::mat4 model = glm::rotate(glm::translate(glm::mat4(1.0f), glm::vec3(-x * 2, 0.0, -y * 2)), glm::radians(t + x + y), glm::vec3(1.0, 1.0, 1.0));
+        assert(numInstances <= maxInstances);
 
-          glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
-          glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
-          glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
-          
-          glDrawElements(GL_TRIANGLES, numVerts, GL_UNSIGNED_INT, 0);
+        // TODO: sort array such that the same meshes/materials are next to each other
+        // TODO: only bind if mesh needs to be changed
+        // TODO: this should be good now, given the nature of how the scene graph works
+        bindMesh(meshHandle);
+
+        GPUMesh& gpuMesh = meshCache[meshHandle.getId()];
+        
+        std::vector<glm::mat4> glTransforms;
+        for (int i = 0; i < numInstances; ++i) {
+          glTransforms.push_back(projection * view * toGlm(transforms[i]));
         }
-      }
-      //glBindVertexArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, gpuMesh.instanceVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * numInstances, glTransforms.data());
+        
+        glBindVertexArray(gpuMesh.VAO);
+
+        glDrawElementsInstanced(GL_TRIANGLES, gpuMesh.numVerts, GL_UNSIGNED_INT, (void*)0, numInstances);
+      });
     }
 
     void endFrame() {
@@ -297,8 +313,11 @@ struct OpenGLRenderer : Renderer {
     }
 
     void shutdown() {
-      glDeleteVertexArrays(1, &VAO);
-      glDeleteBuffers(1, &VBO);
+      for (auto& [id, gpuMesh] : meshCache) {
+        glDeleteVertexArrays(1, &(gpuMesh.VAO));
+        glDeleteBuffers(1, &(gpuMesh.VBO));
+      }
+
       glDeleteProgram(shaderProgramId);
 
       glfwTerminate();

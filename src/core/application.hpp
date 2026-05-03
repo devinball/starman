@@ -31,57 +31,63 @@ struct Stack {
 };
 
 struct Application {
-  Stack stack;
-  CommandBuffer commandBuffer;
-  ResourcePool resourcePool;
-  Registry registry;
+  std::shared_ptr<float> dt;
+  std::shared_ptr<Stack> stack;
+  std::shared_ptr<SceneGraph> sceneGraph;
+  std::shared_ptr<ResourcePool> resourcePool;
+  std::shared_ptr<Registry> registry;
 
   // application holds onto layers
   // we can add and remove layers from the stack
   // application will by default add a bunch of layers
-  // to the stack. maybe in future this can be disabled
+  // to the stack-> maybe in future this can be disabled
   // via build flags.
 
   bool running = true;
 
   void run() {
+    stack = std::make_shared<Stack>();
+    sceneGraph = std::make_shared<SceneGraph>();
+    resourcePool = std::make_shared<ResourcePool>();
+    registry = std::make_shared<Registry>();
+
     //systemRegistry.add<RenderSystem>();
     //systemRegistry.init(context);
 
     //context.dispatcher.sink<QuitEvent>().connect<&Application::quit>(this);
 
-    //stack.add<ProjectLayer>();
-    //stack.add<ResourceLayer>();
-    stack.add<RenderLayer>();
-    stack.add<SceneLayer>();
-    
-    stack.each([this](Layer *layer) {
-      layer->context = { &commandBuffer, &resourcePool, &registry }; // send a context of useful things for event dispatching and buffers
+    //stack->add<ProjectLayer>();
+    //stack->add<ResourceLayer>();
+    stack->add<RenderLayer>();
+    stack->add<SceneLayer>();
+
+    stack->each([this](Layer *layer) {
+      layer->context = { dt, sceneGraph, resourcePool, registry }; // send a context of useful things for event dispatching and buffers
     });
 
-    stack.each([](Layer *layer) {
+    stack->each([](Layer *layer) {
       layer->init();
     });
 
     while (running) {
       // start main loop
-      stack.each([](Layer *layer) {
+      stack->each([](Layer *layer) {
         layer->update();
       });
 
       // start render loop
-      stack.each([](Layer *layer) {
+      stack->each([](Layer *layer) {
         layer->draw();
       });
     }
 
-    stack.each([](Layer *layer) {
+    stack->each([](Layer *layer) {
       layer->shutdown();
     });
   }
 
   void dispatchEvent(Event event) {
-    stack.each([event](Layer *layer) {
+    stack->each([event](Layer *layer) {
       layer->event(event);
     });
   }
