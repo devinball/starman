@@ -29,7 +29,7 @@
 #include "ColorConversion.h"
 #include "MapHelper.h"
 
-#include "core/math/vector.hpp"  // Vector2, Vector3
+#include "core/math/vector.hpp"
 #include "core/mesh.hpp"
 
 using namespace Diligent;

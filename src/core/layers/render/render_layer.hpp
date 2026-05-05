@@ -18,8 +18,8 @@ struct RenderLayer : Layer {
     void init() {
       renderer = std::make_unique<OpenGLRenderer>();
       
-      renderer->resourcePool = context.resourcePool;
-      renderer->sceneGraph = context.sceneGraph;
+      renderer->resourcePool = context->resourcePool;
+      renderer->sceneGraph = context->sceneGraph;
       renderer->init({800, 600, "engine"});
     }
 

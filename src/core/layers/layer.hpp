@@ -3,9 +3,11 @@
 #include "core/events.hpp"
 #include "core/context.hpp"
 
+#include <memory>
+
 struct Layer {
   public:
-    Context context;
+    std::shared_ptr<Context> context;
     virtual void update() {}
     virtual void draw() {}
     virtual void init() {}

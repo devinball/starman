@@ -81,6 +81,12 @@ CPMAddPackage(
     GIT_TAG v6.0.4
     OPTIONS "BUILD_SHARED_LIBS OFF")
 
+CPMAddPackage(
+  NAME yaml-cpp
+  GITHUB_REPOSITORY jbeder/yaml-cpp
+  GIT_TAG 0.9.0
+)
+
 # =============================================================================
 # Engine library sources
 # =============================================================================
@@ -118,7 +124,9 @@ target_link_libraries(engine PUBLIC
     glfw
     Boost::multiprecision
     EnTT::EnTT
-    assimp)
+    #yaml-cpp::yaml-cpp
+    assimp
+)
 
 # =============================================================================
 # Example executable

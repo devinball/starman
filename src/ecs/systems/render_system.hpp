@@ -21,11 +21,11 @@ struct RenderSystem : System {
 
     void draw() {
       t += 0.01;
-      auto view = context.registry->view<MeshRenderer, Spatial>();
+      auto view = context->registry->view<MeshRenderer, Spatial>();
 
       // need to determine culling
 
-      context.sceneGraph->clear();
+      context->sceneGraph->clear();
 
       // maybe right here i loop over all the cameras and preform the transforms into their
       // space ?
@@ -44,7 +44,7 @@ struct RenderSystem : System {
         // even allowing me to use float16), while also
         // doing physics in large scale coordinates
 
-        context.sceneGraph->submitModel(
+        context->sceneGraph->submitModel(
           mesh_renderer.mesh,
           Handle<Material>(),
           transformMatrix(

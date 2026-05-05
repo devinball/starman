@@ -5,8 +5,17 @@
 #include <stdint.h>
 #include <vector>
 
-enum class FilterMode { Linear, Nearest };
-enum class WrapMode   { Repeat, Clamp, Mirror };
+enum class FilterMode {
+  Linear,
+  Nearest
+};
+
+enum class WrapMode 
+{ 
+  Repeat,
+  Clamp,
+  Mirror
+};
 
 struct Image : Resource {
   using Resource::Resource;
@@ -15,6 +24,7 @@ struct Image : Resource {
   const uint16_t height = 0;
   const uint8_t channels = 4;
   const uint8_t depth = 8;
+  // probably should be a byte array
   std::vector<uint8_t> pixels;
 
   FilterMode filter  = FilterMode::Linear;

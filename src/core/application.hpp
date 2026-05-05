@@ -31,11 +31,9 @@ struct Stack {
 };
 
 struct Application {
-  std::shared_ptr<float> dt;
+
   std::shared_ptr<Stack> stack;
-  std::shared_ptr<SceneGraph> sceneGraph;
-  std::shared_ptr<ResourcePool> resourcePool;
-  std::shared_ptr<Registry> registry;
+  std::shared_ptr<Context> context;
 
   // application holds onto layers
   // we can add and remove layers from the stack
@@ -43,16 +41,13 @@ struct Application {
   // to the stack-> maybe in future this can be disabled
   // via build flags.
 
-  bool running = true;
-
   void run() {
     stack = std::make_shared<Stack>();
-    sceneGraph = std::make_shared<SceneGraph>();
-    resourcePool = std::make_shared<ResourcePool>();
-    registry = std::make_shared<Registry>();
-
-    //systemRegistry.add<RenderSystem>();
-    //systemRegistry.init(context);
+    context = std::make_shared<Context>(
+      std::make_shared<SceneGraph>(),
+      std::make_shared<ResourcePool>(),
+      std::make_shared<Registry>()
+    );
 
     //context.dispatcher.sink<QuitEvent>().connect<&Application::quit>(this);
 
@@ -62,14 +57,14 @@ struct Application {
     stack->add<SceneLayer>();
 
     stack->each([this](Layer *layer) {
-      layer->context = { dt, sceneGraph, resourcePool, registry }; // send a context of useful things for event dispatching and buffers
+      layer->context = context; // send a context of useful things for event dispatching and buffers
     });
 
     stack->each([](Layer *layer) {
       layer->init();
     });
 
-    while (running) {
+    while (context->running) {
       // start main loop
       stack->each([](Layer *layer) {
         layer->update();
@@ -93,6 +88,6 @@ struct Application {
   }
 
   void quit(const QuitEvent&) {
-    running = false;
+    context->running = false;
   }
 };

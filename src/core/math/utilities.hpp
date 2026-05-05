@@ -3,6 +3,7 @@
 #include "core/math/vector.hpp"
 #include "core/math/matrix.hpp"
 #include "core/math/quaternion.hpp"
+#include "core/math/constants.hpp"
 
 Matrix4x4F identityMatrix4x4F() {
   return Matrix4x4F({
@@ -132,4 +133,9 @@ Matrix4x4F transformMatrix(Vector3F position, Vector3F scale, QuaternionF rotati
     scale.z * (2*(ik - rj)),           scale.z * (2*(jk + ri)),           scale.z * (r2 - i2 - j2 + k2),     0,
     position.x,                        position.y,                        position.z,                        1
   });
+}
+
+Number gamma(Vector3 relativeVelocity) {
+  Number v2 = relativeVelocity.squareMagnitude();
+  return 1 / (sqrt(1 - (v2 / Constants::c2)));
 }

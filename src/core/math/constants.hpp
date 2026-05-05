@@ -7,5 +7,5 @@ namespace Constants {
   const Number e = boost::math::constants::e<Number>(); // euler's number
   const Number G(0.000000000066743015); // gravitational constant
   const Number c(299792458); // speed of light in a vacuum
-  const Number c_2(299792458*299792458); // speed of light squared
+  const Number c2(89875517873681764); // speed of light squared
 }

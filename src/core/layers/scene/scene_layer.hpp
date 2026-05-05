@@ -32,11 +32,11 @@ struct SceneLayer : Layer {
       int n = 20;
       float d = 0.5;
       for (int i = 0; i < 100; ++i) {
-        Entity e = context.registry->create();
-        context.registry->emplace<Spatial>(e, Vector3(std::sin(i * d) * std::sqrt(i) * d, 0, std::cos(i * d) * std::sqrt(i) * d), Vector3{1, 1, 1}, eulerToQuat(i, 0, 0));
-        Handle<Mesh> mesh = context.resourcePool->load<Mesh>("example/models/frog.stl");
-        Handle<Material> material = Handle<Material>();//context.resourcePool->load<Material>("example/models/frog.mat");
-        context.registry->emplace<MeshRenderer>(e, mesh, material);
+        Entity e = context->registry->create();
+        context->registry->emplace<Spatial>(e, Vector3(std::sin(i * d) * std::sqrt(i) * d, 0, std::cos(i * d) * std::sqrt(i) * d), Vector3{1, 1, 1}, eulerToQuat(i, 0, 0));
+        Handle<Mesh> mesh = context->resourcePool->load<Mesh>("example/models/frog.stl");
+        Handle<Material> material = Handle<Material>();//context->resourcePool->load<Material>("example/models/frog.mat");
+        context->registry->emplace<MeshRenderer>(e, mesh, material);
       }
 
       
@@ -107,7 +107,7 @@ struct SceneLayer : Layer {
 #include "core/layers/layer.hpp"
 #include "ecs/ecs.hpp"
 #include "ecs/system.hpp"
-#include "core/context.hpp"
+#include "core/context->hpp"
 
 #include "ecs/systems/render_system.hpp"
 

@@ -5,7 +5,8 @@
 #include "core/math/quaternion.hpp"
 
 struct Rigidbody {
+    Number properTime;
     Number mass;
     Vector3 velocity;
-    Quaternion angularVelocity;
+    Quaternion angularVelocity; // maybe should be vector3
 };

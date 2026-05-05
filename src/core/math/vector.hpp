@@ -34,6 +34,10 @@ struct Vector2T {
     T magnitude() {
         return sqrt(x*x + y*y);
     }
+
+    T squareMagnitude() {
+        return x*x + y*y;
+    }
 };
 
 template <typename T>
@@ -73,6 +77,10 @@ struct Vector3T {
     T magnitude() {
         return sqrt(x*x + y*y + z*z);
     }
+
+    T squareMagnitude() {
+        return x*x + y*y + z*z;
+    }
 };
 
 template <typename T>
@@ -108,6 +116,10 @@ struct Vector4T {
 
     T magnitude() {
         return sqrt(x*x + y*y + z*z + w*w);
+    }
+
+    T squareMagnitude() {
+        return x*x + y*y + z*z + w*w;
     }
 };
 

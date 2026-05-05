@@ -1,0 +1,3 @@
+struct CameraController {
+  float speed;
+};
