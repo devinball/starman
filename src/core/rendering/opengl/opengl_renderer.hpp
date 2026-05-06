@@ -330,4 +330,6 @@ struct OpenGLRenderer : Renderer {
     bool shouldClose() {
       return glfwWindowShouldClose(window);
     }
+
+    void setRenderMode(RenderMode renderMode) {};
 };

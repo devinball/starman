@@ -3,37 +3,16 @@
 #include "core/context.hpp"
 #include "ecs/ecs.hpp"
 #include "core/layers/layer.hpp"
-#include "core/layers/project/project_layer.hpp"
-#include "core/layers/resource/resource_layer.hpp"
-#include "core/layers/render/render_layer.hpp"
-#include "core/layers/scene/scene_layer.hpp"
+#include "core/rendering/opengl/opengl_renderer.hpp"
+#include "core/scene_manager.hpp"
 
-#include <functional>
-#include <vector>
 #include <memory>
-
-struct Stack {
-  private:
-    std::vector<std::unique_ptr<Layer>> layers;
-  public:
-    template <class T> 
-    void add() {
-      // TODO: throws an error if multiple of the same type are added
-      std::unique_ptr<Layer> layer = std::make_unique<T>();
-      layers.push_back(std::move(layer));
-    }
-
-    void each(std::function<void(Layer*)> f) {
-      for (const auto& layer : layers) {
-        f(layer.get());
-      }
-    }
-};
+#include <chrono>
 
 struct Application {
-
-  std::shared_ptr<Stack> stack;
   std::shared_ptr<Context> context;
+
+  float physicsFrequency = 250; // physics update rate in hertz
 
   // application holds onto layers
   // we can add and remove layers from the stack
@@ -42,52 +21,54 @@ struct Application {
   // via build flags.
 
   void run() {
-    stack = std::make_shared<Stack>();
+    // some of these, especially the renderer may need to
+    // be moved to their own initialization functions, in
+    // the case of the renderer for example this would find
+    // the correct backend to use.
     context = std::make_shared<Context>(
       std::make_shared<SceneGraph>(),
+      std::make_shared<SceneManager>(),
       std::make_shared<ResourcePool>(),
-      std::make_shared<Registry>()
+      std::make_shared<Registry>(),
+      std::make_shared<OpenGLRenderer>()
     );
 
-    //context.dispatcher.sink<QuitEvent>().connect<&Application::quit>(this);
+    context->dt = 1 / physicsFrequency; // well it should be anyways
 
-    //stack->add<ProjectLayer>();
-    //stack->add<ResourceLayer>();
-    stack->add<RenderLayer>();
-    stack->add<SceneLayer>();
+    context->renderer->resourcePool = context->resourcePool;
+    context->renderer->sceneGraph = context->sceneGraph;
+    context->renderer->init({800, 600, "engine"});
 
-    stack->each([this](Layer *layer) {
-      layer->context = context; // send a context of useful things for event dispatching and buffers
-    });
+    context->sceneManager->context = context; // this feels wrong...
+    context->sceneManager->init();
 
-    stack->each([](Layer *layer) {
-      layer->init();
-    });
+    float accumulator = 0;
+    auto previous = std::chrono::high_resolution_clock::now();
 
     while (context->running) {
-      // start main loop
-      stack->each([](Layer *layer) {
-        layer->update();
-      });
+      auto now = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double> elapsed = now - previous;
+      previous = now;
+      accumulator += elapsed.count();
 
-      // start render loop
-      stack->each([](Layer *layer) {
-        layer->draw();
-      });
+      while (accumulator >= context->dt) {
+        context->sceneManager->update();
+        accumulator -= context->dt;
+      }
+      
+      context->sceneManager->draw();
+
+      context->renderer->beginFrame();
+      context->renderer->render();
+      context->renderer->endFrame();
+
+      // reuse now from physics loop calculation for begin frame time
+      std::chrono::duration<double> timer = std::chrono::high_resolution_clock::now() - now;
+      context->frameTime = timer.count();
+
+      context->running = !context->renderer->shouldClose();
     }
 
-    stack->each([](Layer *layer) {
-      layer->shutdown();
-    });
-  }
-
-  void dispatchEvent(Event event) {
-    stack->each([event](Layer *layer) {
-      layer->event(event);
-    });
-  }
-
-  void quit(const QuitEvent&) {
-    context->running = false;
+    context->renderer->shutdown();
   }
 };

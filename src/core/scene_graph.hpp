@@ -51,9 +51,10 @@ struct SceneGraph {
   //std::vector<PostProcess> postProcesses;
 
   // Mesh has many Materials has many Matrix
-  // std::unordered_map<Handle<Mesh>, std::unordered_map<Handle<Material>, std::vector<Matrix4x4F>> models;
+  //std::unordered_map<Handle<Mesh>, std::unordered_map<Handle<Material>, std::vector<Matrix4x4F>> models;
 
   void submitModel(Handle<Mesh> meshHandle, Handle<Material> materialHandle, Matrix4x4F transform) {
+    //models[meshHandle][materialHandle].push_back(transform);
     models[std::pair(meshHandle, materialHandle)].push_back(transform);
   }
 
@@ -62,6 +63,10 @@ struct SceneGraph {
       auto& [meshHandle, materialHandle] = key;
       f(meshHandle, materialHandle, transforms);
     }
+  }
+
+  int numModels() {
+    return models.size();
   }
 
   void clear() {

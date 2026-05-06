@@ -1,17 +1,16 @@
 #include "core/application.hpp"
 #include "iostream"
-
-#include "core/layers/render/opengl/opengl_renderer.hpp"
-
+#include "core/rendering/opengl/opengl_renderer.hpp"
 #include "core/math/utilities.hpp"
-
 #include <chrono>
+
+void noAbstractionTest();
 
 int main()
 {
   printf("\n-----STARTING-----\n\n");
 
-  // noAbstractionTest()
+  //noAbstractionTest();
 
   auto app = Application{};
   app.run();
@@ -26,7 +25,7 @@ int main()
 }
 
 void noAbstractionTest() {
-    auto renderer = OpenGLRenderer{};
+  auto renderer = OpenGLRenderer{};
 
   auto resourcePool = std::make_shared<ResourcePool>();
   auto sceneGraph = std::make_shared<SceneGraph>();
