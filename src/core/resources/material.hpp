@@ -17,6 +17,10 @@ struct Material : Resource {
   std::unordered_map<std::string, Vector4F> vectors;
   std::unordered_map<std::string, Handle<Image>> textures;
 
+  // ideally i want to be able to say material.uniforms["albedo_texture"] = some_image;
+  // then this image would be loaded to the gpu and cached
+  // you could also do material.uniforms["albedo_color"] = Vector4F{1, 1, 1, 1}; // or Color(1, 1, 1, 1);
+
   bool load() override {
     return true;
   }

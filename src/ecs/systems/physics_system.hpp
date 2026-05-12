@@ -4,27 +4,28 @@
 #include "core/math/vector.hpp"
 #include "ecs/system.hpp"
 
-#include "components/rigidbody.hpp"
-#include "components/spatial.hpp"
+#include "ecs/components/rigidbody.hpp"
+#include "ecs/components/spatial.hpp"
 
 struct PhysicsSystem : System {
-  private:
-    Vector3 calculateGravitationalForce(float m2, Vector3 p1, Vector3 p2) {
-      Vector3 delta = p1 - p2;
-      Number r = delta.magnitude();
-      Vector3 d = delta.normalized();
-      return d * Constants::G * m2 / (r * r);
-    }
   public:
-    void init(Context& context) {
+    void init() {
     }
 
     void update() {
-      auto view = context.registry.view<Rigidbody, Spatial>();
+      auto view = context->registry->view<Rigidbody, Spatial>();
 
-      view.each([](auto &rigidbody, auto &spatial){
+      view.each([this](auto &rigidbody, auto &spatial){
         // TODO: collision check
-        spatial.position += spatial.velocity * context.dt;
+        // TODO: might need to use proper time instead of coordinate time
+        spatial.position = spatial.position + rigidbody.velocity * context->dt;
+
+        // TODO: in the future when integrating forces I can use this equation:
+        // γ^3 * m * a, where γ is the lorenz factor, and m is rest mass
+        // or: a=\frac{F}{m}\left(1-\frac{v^{2}}{c^{2}}\right)^{\frac{3}{2}}
+
+        // temporary make everything spin
+        spatial.rotation = eulerToQuat(context->runTime, context->runTime, context->runTime);
       });
 
       /*

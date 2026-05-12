@@ -79,7 +79,9 @@ CPMAddPackage(
     NAME assimp
     GITHUB_REPOSITORY assimp/assimp
     GIT_TAG v6.0.4
-    OPTIONS "BUILD_SHARED_LIBS OFF")
+    OPTIONS
+        "BUILD_SHARED_LIBS OFF"
+        "ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF")
 
 CPMAddPackage(
   NAME yaml-cpp

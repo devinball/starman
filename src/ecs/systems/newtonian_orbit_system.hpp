@@ -7,6 +7,12 @@
 
 struct NewtonianOrbitSystem : System {
   private:
+      Vector3 calculateGravitationalForce(float m2, Vector3 p1, Vector3 p2) {
+        Vector3 delta = p1 - p2;
+        Number r = delta.magnitude();
+        Vector3 d = delta.normalized();
+        return d * Constants::G * m2 / (r * r);
+      }
   public:
     void init() {
     }

@@ -12,7 +12,7 @@
 struct Application {
   std::shared_ptr<Context> context;
 
-  float physicsFrequency = 250; // physics update rate in hertz
+  float physicsFrequency = 60; // physics update rate in hertz
 
   // application holds onto layers
   // we can add and remove layers from the stack
@@ -37,17 +37,20 @@ struct Application {
 
     context->renderer->resourcePool = context->resourcePool;
     context->renderer->sceneGraph = context->sceneGraph;
-    context->renderer->init({800, 600, "engine"});
+    context->renderer->init({800, 600, "engine", false, false});
 
     context->sceneManager->context = context; // this feels wrong...
     context->sceneManager->init();
 
     float accumulator = 0;
+    auto startTime = std::chrono::high_resolution_clock::now();
     auto previous = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double> elapsed;
 
     while (context->running) {
       auto now = std::chrono::high_resolution_clock::now();
-      std::chrono::duration<double> elapsed = now - previous;
+      elapsed = now - previous;
       previous = now;
       accumulator += elapsed.count();
 
@@ -63,10 +66,15 @@ struct Application {
       context->renderer->endFrame();
 
       // reuse now from physics loop calculation for begin frame time
-      std::chrono::duration<double> timer = std::chrono::high_resolution_clock::now() - now;
-      context->frameTime = timer.count();
+      elapsed = std::chrono::high_resolution_clock::now() - now;
+      context->frameTime = elapsed.count();
+
+      elapsed = std::chrono::high_resolution_clock::now() - startTime;
+      context->runTime = elapsed.count();
 
       context->running = !context->renderer->shouldClose();
+
+      //printf("Frametime: %f ms FPS: %i\n", context->frameTime * 1000, int(1 / context->frameTime));
     }
 
     context->renderer->shutdown();

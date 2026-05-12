@@ -2,6 +2,8 @@
 
 #include "core/math/number.hpp"
 
+// TODO: implement +=, -=, /=, *=, ==, etc
+
 template <typename T>
 struct Vector2T {
     T x;

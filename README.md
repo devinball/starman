@@ -35,3 +35,8 @@ maybe one layer could just handle timing and loops, it would call a special on u
 ### newton orbits
 
 ## Bugs
+
+
+## Log
+### 250 onscreen simple_frog.stl, default lit material
+5/5/26 - Nvidia: 0.5 ms Intel: 5.3 ms

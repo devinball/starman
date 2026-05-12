@@ -54,6 +54,11 @@ glm::mat4 toGlm(Matrix4x4F& mat) {
   return glm::make_mat4(mat.getData().data());
 }
 
+glm::mat4 toGlm(Matrix4x4& mat) {
+  std::vector<float> floatVector(mat.getData().begin(), mat.getData().end());
+  return glm::make_mat4(floatVector.data());
+}
+
 int framebufferWidth = 0;
 int framebufferHeight = 0;
 
@@ -71,6 +76,10 @@ struct OpenGLRenderer : Renderer {
 
     struct GPUMesh {
       uint VBO, VAO, EBO, numVerts, instanceVBO;
+    };
+
+    struct GPUTexture {
+
     };
 
     // handle id -> GPUMesh  TODO: i should really just write a hash for handle
@@ -273,37 +282,44 @@ struct OpenGLRenderer : Renderer {
       glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-      // compute these matrices only once, if i wanted to i could even cache these in between frames
-      // and only update when i know something has changed, but i doubt that would make too much of a
-      // difference anyways.
-      glm::mat4 projection = glm::perspective(glm::radians(45.f), (float)framebufferWidth/(float)framebufferHeight, 0.1f, 1000.f);
-      glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 25.0f, 0.1f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
       // V_clip = M_proj * M_view * M_model * V_local
 
-      sceneGraph->eachModel(identityMatrix4x4F(), [&](Handle<Mesh> meshHandle, Handle<Material> materialHandle, std::vector<Matrix4x4F>& transforms) {
-        int numInstances = transforms.size();
+      sceneGraph->eachCamera([&](CameraData& cameraData){
+        glm::mat4 projection = glm::perspective(glm::radians(45.f), (float)framebufferWidth/(float)framebufferHeight, 0.1f, 1000.f);
+        glm::mat4 view = glm::lookAt(
+          glm::vec3(20, 20, 20),
+          glm::vec3(0.0f, 0.0f, 0.0f),
+          glm::vec3(0.0f, 1.0f, 0.0f)
+        );
 
-        assert(numInstances <= maxInstances);
+        sceneGraph->eachModel(identityMatrix4x4F(), [&](Handle<Mesh> meshHandle, Handle<Material> materialHandle, std::vector<ModelData>& modelDatas) {
+          int numInstances = modelDatas.size();
 
-        // TODO: sort array such that the same meshes/materials are next to each other
-        // TODO: only bind if mesh needs to be changed
-        // TODO: this should be good now, given the nature of how the scene graph works
-        bindMesh(meshHandle);
+          assert(numInstances <= maxInstances);
 
-        GPUMesh& gpuMesh = meshCache[meshHandle.getId()];
-        
-        std::vector<glm::mat4> glTransforms;
-        for (int i = 0; i < numInstances; ++i) {
-          glTransforms.push_back(projection * view * toGlm(transforms[i]));
-        }
+          // TODO: sort array such that the same meshes/materials are next to each other
+          // TODO: only bind if mesh needs to be changed
+          // TODO: this should be good now, given the nature of how the scene graph works
+          bindMesh(meshHandle);
 
-        glBindBuffer(GL_ARRAY_BUFFER, gpuMesh.instanceVBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * numInstances, glTransforms.data());
-        
-        glBindVertexArray(gpuMesh.VAO);
+          GPUMesh& gpuMesh = meshCache[meshHandle.getId()];
+          
+          std::vector<glm::mat4> glTransforms;
+          for (int i = 0; i < numInstances; ++i) {
+            ModelData modelData = modelDatas[i];
+            Vector3F relativePosition = {(float)modelData.position.x, (float)modelData.position.y, (float)modelData.position.z};
+            Matrix4x4F transform = transformMatrix(relativePosition, modelData.scale, modelData.rotation);
+            glTransforms.push_back(projection * view * toGlm(transform));
+          }
 
-        glDrawElementsInstanced(GL_TRIANGLES, gpuMesh.numVerts, GL_UNSIGNED_INT, (void*)0, numInstances);
+          glBindBuffer(GL_ARRAY_BUFFER, gpuMesh.instanceVBO);
+          glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * numInstances, glTransforms.data());
+          
+          glBindVertexArray(gpuMesh.VAO);
+
+          glDrawElementsInstanced(GL_TRIANGLES, gpuMesh.numVerts, GL_UNSIGNED_INT, (void*)0, numInstances);
+        });
       });
     }
 

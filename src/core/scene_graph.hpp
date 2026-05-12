@@ -1,6 +1,8 @@
 #pragma once
 
 #include "core/math/vector.hpp"
+#include "core/math/quaternion.hpp"
+#include "core/math/utilities.hpp"
 #include "core/render_utils.hpp"
 #include "ecs/components/camera.hpp"
 #include "ecs/components/point_light.hpp"
@@ -19,6 +21,23 @@ struct std::hash<std::pair<Handle<Mesh>, Handle<Material>>> {
   std::size_t operator()(const std::pair<Handle<Mesh>, Handle<Material>>& p) const {
     return std::hash<string>()(p.first.getId()) ^ (std::hash<string>()(p.second.getId()) << 1);
   }
+};
+
+struct CameraData {
+  float fov;
+  //std::shared_ptr<RenderTarget> renderTarget;
+  Color clearColor = {0, 0, 0.2, 1};
+  bool doClear = true;
+  int priority = 0;
+  Vector3 position;
+  Vector3F scale;
+  QuaternionF rotation;
+};
+
+struct ModelData {
+  Vector3 position;
+  Vector3F scale;
+  QuaternionF rotation;
 };
 
 struct SceneGraph {
@@ -45,7 +64,8 @@ struct SceneGraph {
 
   // there would be a SceneGraph.submitModel that would deal with adding a model to the multimap
 
-  std::unordered_map<std::pair<Handle<Mesh>, Handle<Material>>, std::vector<Matrix4x4F>> models;
+  std::unordered_map<std::pair<Handle<Mesh>, Handle<Material>>, std::vector<ModelData>> models;
+  std::unordered_map<int, CameraData> cameras;
   std::vector<PointLight> pointLights;
   //std::vector<GuiElement> guiElements;
   //std::vector<PostProcess> postProcesses;
@@ -53,15 +73,33 @@ struct SceneGraph {
   // Mesh has many Materials has many Matrix
   //std::unordered_map<Handle<Mesh>, std::unordered_map<Handle<Material>, std::vector<Matrix4x4F>> models;
 
-  void submitModel(Handle<Mesh> meshHandle, Handle<Material> materialHandle, Matrix4x4F transform) {
-    //models[meshHandle][materialHandle].push_back(transform);
-    models[std::pair(meshHandle, materialHandle)].push_back(transform);
+  void submitCamera(int id, int priority, float fov, bool doClear, Color clearColor, Vector3 position, Vector3F scale, QuaternionF rotation) {
+    cameras[id] = CameraData{
+      fov,
+      clearColor = {0, 0, 0.2, 1},
+      doClear = true,
+      priority = 0,
+      position,
+      scale,
+      rotation
+    };
   }
 
-  void eachModel(Matrix4x4F frustrum, std::function<void(Handle<Mesh>, Handle<Material>, std::vector<Matrix4x4F>&)> f) {
-    for (auto& [key, transforms] : models) {
+  void eachCamera(std::function<void(CameraData& cameraData)> f) {
+    for (auto& [key, cameraData] : cameras) {
+      f(cameraData);
+    }
+  }
+
+  void submitModel(Handle<Mesh> meshHandle, Handle<Material> materialHandle, Vector3 position, Vector3F scale, QuaternionF rotation) {
+    //models[meshHandle][materialHandle].push_back(transform);
+    models[std::pair(meshHandle, materialHandle)].push_back(ModelData{position, scale, rotation});
+  }
+
+  void eachModel(Matrix4x4F frustrum, std::function<void(Handle<Mesh>, Handle<Material>, std::vector<ModelData>&)> f) {
+    for (auto& [key, modelData] : models) {
       auto& [meshHandle, materialHandle] = key;
-      f(meshHandle, materialHandle, transforms);
+      f(meshHandle, materialHandle, modelData);
     }
   }
 
@@ -71,5 +109,6 @@ struct SceneGraph {
 
   void clear() {
     models.clear();
+    //cameras.clear();
   }
 };

@@ -4,29 +4,14 @@
 #include <inttypes.h>
 #include <string>
 
-struct WindowConfig
-{
-  int width = 1280;
-  int height = 720;
-  const char *title = "App";
-  bool vsync = true;
-  bool resizable = true;
-};
+#include "core/math/matrix.hpp"
+#include "core/math/color.hpp"
 
 struct RenderTarget {
-  uint32_t id = 0;
-  bool isValid() const { return id != 0; }
-  bool operator==(const RenderTarget&) const = default;
+  int id;
+  int width;
+  int height;
+
+  bool isScreen() const { return id == 0; }
 };
 
-struct EvictionList
-{
-  std::vector<std::string> meshIds;
-  std::vector<std::string> imageIds;
-  std::vector<std::string> shaderIds;
-
-  bool empty() const
-  {
-    return meshIds.empty() && imageIds.empty() && shaderIds.empty();
-  }
-};

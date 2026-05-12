@@ -4,8 +4,53 @@
 // Numbers can be used just like normal numbers, with math functions and whatnot
 
 #include <boost/multiprecision/cpp_bin_float.hpp>
+#include <stdint.h>
 
 using Number = boost::multiprecision::cpp_bin_float_50; // probably too big
+
+/*
+template <int W, int F>
+struct FixedPoint {
+    int64_t whole;
+    int16_t scale = 2^F;
+
+    // value = whole / scale;
+
+    FixedPoint operator+(const FixedPoint& b) {
+        if (scale == b.scale) {
+            return FixedPoint(whole + b.whole, scale);
+        }
+    }
+
+    FixedPoint operator-(const FixedPoint& b) {
+        
+    }
+
+    FixedPoint operator*(const FixedPoint& b) {
+        return FixedPoint
+    }
+
+    FixedPoint operator/(const FixedPoint& b) {
+        
+    }
+
+    FixedPoint operator+() {
+
+    }
+
+    FixedPoint operator-() {
+        
+    }
+
+    FixedPoint operator*() {
+
+    }
+
+    FixedPoint operator/() {
+        
+    }
+};
+*/
 
 Number sin(Number x) {
     return boost::multiprecision::sin(x);

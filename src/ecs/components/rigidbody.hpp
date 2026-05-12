@@ -7,6 +7,6 @@
 struct Rigidbody {
     Number properTime;
     Number mass;
-    Vector3 velocity;
-    Quaternion angularVelocity; // maybe should be vector3
+    Vector3 velocity; // Should not need high precision, highest value is c anyways
+    QuaternionF angularVelocity; // maybe should be vector3
 };

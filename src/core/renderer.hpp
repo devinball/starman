@@ -3,10 +3,13 @@
 #include "core/scene_graph.hpp"
 #include "core/resource_pool.hpp"
 
+// TODO: include fullscreen, vsync in OpenGLRenderer
 struct WindowSettings {
   uint16_t width;
   uint16_t height;
   std::string title;
+  bool fullscreen;
+  bool vsync;
 };
 
 enum RenderMode { DEFAULT, NORMAL, WIREFRAME, DEPTH, LIGHTING, MOTION_VECTORS, UV };

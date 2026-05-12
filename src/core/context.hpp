@@ -14,6 +14,7 @@ struct Context {
   bool running = true;
   float dt = 0.01; // default non-zero value to avoid errors dividing by dt;
   float frameTime = 0.01;
+  double runTime = 0;
   std::shared_ptr<SceneGraph> sceneGraph;
   std::shared_ptr<SceneManager> sceneManager;
   std::shared_ptr<ResourcePool> resourcePool;

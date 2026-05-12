@@ -7,7 +7,10 @@
 #include "core/resources/scene.hpp"
 #include "ecs/components/spatial.hpp"
 #include "ecs/components/mesh_renderer.hpp"
+#include "ecs/components/rigidbody.hpp"
+#include "ecs/components/camera.hpp"
 #include "ecs/systems/render_system.hpp"
+#include "ecs/systems/physics_system.hpp"
 #include "core/math/utilities.hpp"
 
 #include <memory>
@@ -29,19 +32,36 @@ struct SceneManager {
     std::shared_ptr<Context> context;
 
     void init() {
-      // TODO: !!!! SERIOUS PERFORMANCE ISSUES WITH MANY MESHES
+      // TODO: High numbers of meshes do not preform as well as i would like
 
-      int n = 20;
+      Entity camera = context->registry->create();
+      context->registry->emplace<Spatial>(camera, Vector3(0, 0, 0), Vector3F{1, 1, 1}, eulerToQuat(0, 0, 0));
+      context->registry->emplace<Camera>(camera, 0, 90.0f, Color(0, 0, 0.2, 1), true, 0);
+
       float d = 0.5;
-      for (int i = 0; i < 100; ++i) {
+
+      for (int i = 0; i < 250; ++i) {
         Entity e = context->registry->create();
-        context->registry->emplace<Spatial>(e, Vector3(std::sin(i * d) * std::sqrt(i) * d, 0, std::cos(i * d) * std::sqrt(i) * d), Vector3{1, 1, 1}, eulerToQuat(i, 0, 0));
+        context->registry->emplace<Spatial>(e, Vector3(std::sin(i * d) * std::sqrt(i) * d, 0, std::cos(i * d) * std::sqrt(i) * d), Vector3F{1, 1, 1}, eulerToQuat(i, 0, 0));
         Handle<Mesh> mesh = context->resourcePool->load<Mesh>("example/models/simple_frog.stl");
         Handle<Material> material = Handle<Material>();//context->resourcePool->load<Material>("example/models/frog.mat");
         context->registry->emplace<MeshRenderer>(e, mesh, material);
+        context->registry->emplace<Rigidbody>(e);
       }
 
+      /*
+      for (int i = 0; i < 250; ++i) {
+        Entity e = context->registry->create();
+        context->registry->emplace<Spatial>(e, Vector3(std::sin(i * d) * std::sqrt(i) * d, 2, std::cos(i * d) * std::sqrt(i) * d), Vector3F{1, 1, 1}, eulerToQuat(i, 0, 0));
+        Handle<Mesh> mesh = context->resourcePool->load<Mesh>("example/models/monkey.stl");
+        Handle<Material> material = Handle<Material>();//context->resourcePool->load<Material>("example/models/frog.mat");
+        context->registry->emplace<MeshRenderer>(e, mesh, material);
+        context->registry->emplace<Rigidbody>(e);
+      }
+      */
+
       addSystem<RenderSystem>();
+      addSystem<PhysicsSystem>();
 
       for (auto& system : systems) {
         system->context = context;
