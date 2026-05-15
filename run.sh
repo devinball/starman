@@ -1,1 +1,0 @@
-./build.sh && GDK_BACKEND=x11 nvidia-offload mangohud ./build/example
