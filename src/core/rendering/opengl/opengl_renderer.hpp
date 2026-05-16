@@ -9,46 +9,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-inline constexpr const char* defaultVertexShader = R"glsl(
-#version 330 core
-layout (location = 0) in vec3 aVertex;
-layout (location = 1) in vec3 aNormal;
-layout (location = 2) in vec2 aUv;
-layout (location = 3) in mat4 aTransform;
-
-out vec3 vNormal;
-
-void main() {
-  gl_Position = aTransform * vec4(aVertex, 1.0f);
-  vNormal = normalize(mat3(aTransform) * aNormal);;
-}
-)glsl";
-
-inline constexpr const char* defaultFragmentShader = R"glsl(
-#version 330 core
-in vec3 vNormal;
-
-out vec4 fragColor;
-
-void main() {
-  float ambient = 0.1;
-  vec3  L       = normalize(vec3(0.6, 1.0, 0.4));
-  float diffuse = max(dot(normalize(vNormal), L), 0.0);
-  float light   = ambient + (1 - ambient) * diffuse;
-  vec4  base    = vec4(1.0, 1.0, 1.0, 1.0);
-  fragColor     = vec4(base.rgb * light, base.a);
-
-  // fragColor = vec4(vNormal.rgb, 1.0);
-}
-)glsl";
-
-inline constexpr const char* defaultShader = R"glsl(
-
-)glsl";
-        
-    
+#include <glm/gtc/type_ptr.hpp>    
 
 glm::mat4 toGlm(Matrix4x4F& mat) {
   return glm::make_mat4(mat.getData().data());
@@ -72,31 +33,45 @@ struct OpenGLRenderer : Renderer {
       }
     }
 
-    uint maxInstances = 10000;
+    uint maxInstances = 1000;
 
     struct GPUMesh {
       uint VBO, VAO, EBO, numVerts, instanceVBO;
     };
 
     struct GPUTexture {
+      uint glTex;
+    };
 
+    struct GPUShader {
+      uint id;
+      uint aVpLoc;
     };
 
     // handle id -> GPUMesh  TODO: i should really just write a hash for handle
     std::unordered_map<std::string, GPUMesh> meshCache;
+    std::unordered_map<std::string, GPUTexture> textureCache;
+    std::unordered_map<std::string, GPUShader> shaderCache;
 
     // shader cache
     // mesh cache
     // material cache
 
   public:
-    uint shaderProgramId;
+    Handle<Shader> shaderHandle;
 
     void init(const WindowSettings settings) {
       framebufferWidth = settings.width;
       framebufferHeight = settings.height;
-      
+
+      glfwSetErrorCallback([](int code, const char* description){
+        printf("Failed to create GLFW window: %d\n %s\n", code, description);
+      });
+
       glfwInit();
+
+      printf("Platform: %d\n", glfwGetPlatform());
+
       glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
       glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
       glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -104,7 +79,6 @@ struct OpenGLRenderer : Renderer {
 
       window = glfwCreateWindow(settings.width, settings.height, settings.title.c_str(), nullptr, nullptr);
       if (window == NULL) {
-        printf("Failed to create GLFW window\n");
         glfwTerminate();
         assert(false && "Could not create window");
       }
@@ -137,8 +111,8 @@ struct OpenGLRenderer : Renderer {
       // wireframe mode
       // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-      shaderProgramId = compileShaderProgram(defaultVertexShader, defaultFragmentShader);
-
+      shaderHandle = resourcePool->load<Shader>("example/shaders/default.glsl");
+      
       printf("Completed Setup\n");
     }
 
@@ -196,66 +170,88 @@ struct OpenGLRenderer : Renderer {
       
     }
 
+    void bindTexture(Handle<Image> imageHandle) {
+      if (textureCache.count(imageHandle.getId())) return;
+      Image* image = resourcePool->get(imageHandle);
+      
+      uint glTex;
+      glGenTextures(1, &glTex);
+      glBindTexture(GL_TEXTURE_2D, glTex);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->width, image->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels.data());
+      glGenerateMipmap(GL_TEXTURE_2D);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      textureCache[imageHandle.getId()] = { glTex };
+    }
+
     void bindMesh(Handle<Mesh> meshHandle) {
-      if (meshCache.count(meshHandle.getId()) == 0) {
-        Mesh* mesh = resourcePool->get(meshHandle);
+      if (meshCache.count(meshHandle.getId())) return;
+      Mesh* mesh = resourcePool->get(meshHandle);
 
-        uint VAO, VBO, EBO;
+      uint VAO, VBO, EBO;
 
-        std::vector<float> vertices;
-        for (uint i = 0; i < mesh->vertices.size(); ++i) {
-          vertices.push_back(mesh->vertices[i].x);
-          vertices.push_back(mesh->vertices[i].y);
-          vertices.push_back(mesh->vertices[i].z);
+      std::vector<float> vertices;
+      for (uint i = 0; i < mesh->vertices.size(); ++i) {
+        vertices.push_back(mesh->vertices[i].x);
+        vertices.push_back(mesh->vertices[i].y);
+        vertices.push_back(mesh->vertices[i].z);
 
-          vertices.push_back(mesh->normals[i].x);
-          vertices.push_back(mesh->normals[i].y);
-          vertices.push_back(mesh->normals[i].z);
+        vertices.push_back(mesh->normals[i].x);
+        vertices.push_back(mesh->normals[i].y);
+        vertices.push_back(mesh->normals[i].z);
 
-          vertices.push_back(mesh->uvs[i].x);
-          vertices.push_back(mesh->uvs[i].y);
-        }
-
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        glGenBuffers(1, &EBO);
-        
-        glBindVertexArray(VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices.size() * sizeof(uint32_t), mesh->indices.data(), GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
-        glEnableVertexAttribArray(2);
-
-        uint instanceVBO;
-        glGenBuffers(1, &instanceVBO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * maxInstances, nullptr, GL_DYNAMIC_DRAW);
-
-        for (int i = 0; i < 4; ++i) {
-          glEnableVertexAttribArray(3 + i);
-          glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * sizeof(glm::vec4)));
-          glVertexAttribDivisor(3 + i, 1);
-        }
-
-        // TODO, make sure numVerts should actually be indices and not vertices size
-        meshCache[meshHandle.getId()] = GPUMesh{VBO, VAO, EBO, (uint)mesh->indices.size(), instanceVBO};
-
-        // TODO: if shader is the same as the previous one don't rebind
-        // TODO: this should really be in render() with the check
-        glUseProgram(shaderProgramId);
-
-        printf("Loaded mesh to gpu\n");
+        vertices.push_back(mesh->uvs[i].x);
+        vertices.push_back(mesh->uvs[i].y);
       }
+
+      glGenVertexArrays(1, &VAO);
+      glGenBuffers(1, &VBO);
+      glGenBuffers(1, &EBO);
+      
+      glBindVertexArray(VAO);
+
+      glBindBuffer(GL_ARRAY_BUFFER, VBO);
+      glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices.size() * sizeof(uint32_t), mesh->indices.data(), GL_STATIC_DRAW);
+
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+      glEnableVertexAttribArray(0);
+      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(float)));
+      glEnableVertexAttribArray(1);
+      glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(float)));
+      glEnableVertexAttribArray(2);
+
+      uint instanceVBO;
+      glGenBuffers(1, &instanceVBO);
+
+      glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+      glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * maxInstances, nullptr, GL_DYNAMIC_DRAW);
+
+      for (int i = 0; i < 4; ++i) {
+        glEnableVertexAttribArray(3 + i);
+        glVertexAttribPointer(3 + i, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(i * sizeof(glm::vec4)));
+        glVertexAttribDivisor(3 + i, 1);
+      }
+
+      // TODO, make sure numVerts should actually be indices and not vertices size
+      meshCache[meshHandle.getId()] = GPUMesh{VBO, VAO, EBO, (uint)mesh->indices.size(), instanceVBO};
+
+      // TODO: if shader is the same as the previous one don't rebind
+      // TODO: this should really be in render() with the check
+      
+
+      printf("Loaded mesh to gpu\n");
+    }
+
+    void bindShader(Handle<Shader> shaderHandle) {
+      if (shaderCache.count(shaderHandle.getId())) return;
+      Shader* shader = resourcePool->get(shaderHandle);
+
+      uint id = compileShaderProgram(shader->vertexSource.c_str(), shader->fragmentSource.c_str());
+      uint aVpLoc = glGetUniformLocation(id, "aVp");
+
+      shaderCache[shaderHandle.getId()] = GPUShader{id, aVpLoc};
     }
 
     void render() {
@@ -293,6 +289,8 @@ struct OpenGLRenderer : Renderer {
           glm::vec3(0.0f, 1.0f, 0.0f)
         );
 
+        glm::mat4 vp = projection * view;
+
         sceneGraph->eachModel(identityMatrix4x4F(), [&](Handle<Mesh> meshHandle, Handle<Material> materialHandle, std::vector<ModelData>& modelDatas) {
           int numInstances = modelDatas.size();
 
@@ -302,19 +300,30 @@ struct OpenGLRenderer : Renderer {
           // TODO: only bind if mesh needs to be changed
           // TODO: this should be good now, given the nature of how the scene graph works
           bindMesh(meshHandle);
-
           GPUMesh& gpuMesh = meshCache[meshHandle.getId()];
+
+          //bindImage(imageHandle);
+          //GPUTexture& gpuTexture = textureCache[imageHandle.getId()];
+          //glActiveTexture(GL_TEXTURE0);
+          //glBindTexture(GL_TEXTURE_2D, gpuTexture.glTex);
+          //glUniform1i(glGetUniformLocation(shaderProgramId, "uAlbedo"), 0);
+
+          bindShader(shaderHandle);
+          GPUShader& gpuShader = shaderCache[shaderHandle.getId()];
+          glUseProgram(gpuShader.id);
+
+          glUniformMatrix4fv(gpuShader.aVpLoc, 1, GL_FALSE, glm::value_ptr(vp));
           
-          std::vector<glm::mat4> glTransforms;
+          std::vector<glm::mat4> glmodels;
           for (int i = 0; i < numInstances; ++i) {
             ModelData modelData = modelDatas[i];
             Vector3F relativePosition = {(float)modelData.position.x, (float)modelData.position.y, (float)modelData.position.z};
-            Matrix4x4F transform = transformMatrix(relativePosition, modelData.scale, modelData.rotation);
-            glTransforms.push_back(projection * view * toGlm(transform));
+            Matrix4x4F model = transformMatrix(relativePosition, modelData.scale, modelData.rotation);
+            glmodels.push_back(toGlm(model));
           }
 
           glBindBuffer(GL_ARRAY_BUFFER, gpuMesh.instanceVBO);
-          glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * numInstances, glTransforms.data());
+          glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * numInstances, glmodels.data());
           
           glBindVertexArray(gpuMesh.VAO);
 
@@ -334,7 +343,9 @@ struct OpenGLRenderer : Renderer {
         glDeleteBuffers(1, &(gpuMesh.VBO));
       }
 
-      glDeleteProgram(shaderProgramId);
+      for (auto& [id, gpuShader] : shaderCache) {
+        glDeleteProgram(gpuShader.id);
+      } 
 
       glfwTerminate();
     }
