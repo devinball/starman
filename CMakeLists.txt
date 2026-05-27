@@ -86,7 +86,7 @@ CPMAddPackage(
 CPMAddPackage(
   NAME yaml-cpp
   GITHUB_REPOSITORY jbeder/yaml-cpp
-  GIT_TAG 0.9.0
+  GIT_TAG yaml-cpp-0.9.0
 )
 
 # =============================================================================
@@ -126,7 +126,7 @@ target_link_libraries(engine PUBLIC
     glfw
     Boost::multiprecision
     EnTT::EnTT
-    #yaml-cpp::yaml-cpp
+    yaml-cpp
     assimp
 )
 

@@ -25,7 +25,7 @@ struct PhysicsSystem : System {
         // or: a=\frac{F}{m}\left(1-\frac{v^{2}}{c^{2}}\right)^{\frac{3}{2}}
 
         // temporary make everything spin
-        spatial.rotation = eulerToQuat(context->runTime, context->runTime, context->runTime);
+        spatial.rotation = eulerToQuat(context->runtime, context->runtime, context->runtime);
       });
 
       /*

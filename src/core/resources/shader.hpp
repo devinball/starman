@@ -3,7 +3,7 @@
 #include "core/resources/resource.hpp"
 
 #include <string>
-
+#include <fstream>
 
 inline constexpr const char* defaultVertexShader = R"glsl(
 #version 330 core
@@ -18,6 +18,7 @@ out vec3 vWorldPos;
 out vec3 vNormal;
 
 void main() {
+
   vec4 worldPos = aModel * vec4(aVertex, 1.0);
   gl_Position = aVp * worldPos;
   vWorldPos = worldPos.xyz;
@@ -32,20 +33,19 @@ in vec3 vNormal;
 
 out vec4 fragColor;
 
+uniform float ambient;
+uniform vec4 albedo;
+
 void main() {
-  float ambient = 0.1;
+  vec4  base    = albedo;
+
   vec3  L       = normalize(vec3(0.6, 1.0, 0.4));
   float diffuse = max(dot(normalize(vNormal), L), 0.0);
   float light   = ambient + (1 - ambient) * diffuse;
-  vec4  base    = vec4(1.0, 1.0, 1.0, 1.0);
   fragColor     = vec4(base.rgb * light, base.a);
 
   // fragColor = vec4(vNormal.rgb, 1.0);
 }
-)glsl";
-
-inline constexpr const char* defaultShader = R"glsl(
-
 )glsl";
 
 
@@ -64,9 +64,49 @@ struct Shader : Resource {
   // then you would reference a shader by id, the renderer
   // does all the translating
 
+  // LLM-WRITTEN
   bool load() override {
-    vertexSource = defaultVertexShader;
-    fragmentSource = defaultFragmentShader;
+    std::ifstream file(getId().c_str());
+
+    if (!file.is_open()) {
+      printf("Failed to open shader: %s", getId().c_str());
+    }
+
+    enum class Section { None, Vertex, Fragment, Geometry };
+
+    std::unordered_map<Section, std::string*> targets = {
+      { Section::Vertex, &vertexSource },
+      { Section::Fragment, &fragmentSource },
+      { Section::Geometry, &geometrySource },
+    };
+
+    std::unordered_map<std::string, Section> pragmas = {
+      { "#pragma vertex", Section::Vertex },
+      { "#pragma fragment", Section::Fragment },
+      { "#pragma geometry", Section::Geometry },
+    };
+
+    Section current = Section::None;
+    std::string line;
+
+    while (std::getline(file, line)) {
+      auto trimmed = line.substr(0, line.find_last_not_of(" \t\r\n") + 1);
+
+      auto it = pragmas.find(trimmed);
+      if (it != pragmas.end()) {
+        current = it->second;
+        continue;
+      }
+
+      if (current != Section::None) {
+        *targets[current] += line + '\n';
+      }
+    }
+
+    if (vertexSource.empty() || fragmentSource.empty()) {
+      printf("Vertex and Fragment are needed for shader: %s", getId().c_str());
+      return false;
+    }
 
     return true;
   }

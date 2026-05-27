@@ -136,3 +136,7 @@ using Vector4F = Vector4T<float>;
 using Vector2I = Vector2T<int>;
 using Vector3I = Vector3T<int>;
 using Vector4I = Vector4T<int>;
+
+Vector3F toVector3F(Vector3 v) {
+    return Vector3F{(float)v.x, (float)v.y, (float)v.z};
+}

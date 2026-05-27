@@ -20,6 +20,18 @@ glm::mat4 toGlm(Matrix4x4& mat) {
   return glm::make_mat4(floatVector.data());
 }
 
+// TODO: does not do scale, probably not important tho
+glm::mat4 createViewMatrix(Vector3 position, Vector3F scale, QuaternionF rotation) {
+  glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3((float)position.x, (float)position.y, (float)position.z));
+  glm::mat4 rotationMatrix = glm::mat4_cast(glm::quat(rotation.r, rotation.i, rotation.j, rotation.k));
+  glm::mat4 worldMatrix = translationMatrix * rotationMatrix;
+  return glm::inverse(worldMatrix);
+}
+
+glm::mat4 createProjMatrix(float fov, float aspectRatio, float near, float far) {
+  return glm::perspective(glm::radians(fov), aspectRatio, near, far);
+}
+
 int framebufferWidth = 0;
 int framebufferHeight = 0;
 
@@ -48,6 +60,10 @@ struct OpenGLRenderer : Renderer {
       uint aVpLoc;
     };
 
+    struct GPUMaterial {
+      std::vector<uint> uniformLocations;
+    };
+
     // handle id -> GPUMesh  TODO: i should really just write a hash for handle
     std::unordered_map<std::string, GPUMesh> meshCache;
     std::unordered_map<std::string, GPUTexture> textureCache;
@@ -58,8 +74,6 @@ struct OpenGLRenderer : Renderer {
     // material cache
 
   public:
-    Handle<Shader> shaderHandle;
-
     void init(const WindowSettings settings) {
       framebufferWidth = settings.width;
       framebufferHeight = settings.height;
@@ -110,8 +124,6 @@ struct OpenGLRenderer : Renderer {
 
       // wireframe mode
       // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-      shaderHandle = resourcePool->load<Shader>("example/shaders/default.glsl");
       
       printf("Completed Setup\n");
     }
@@ -165,9 +177,14 @@ struct OpenGLRenderer : Renderer {
       return shaderProgram;
     }
 
-    // load material, compile shaders if needed
-    void bindMaterial(Handle<Material> materialHandle) {
-      
+    void bindShader(Handle<Shader> shaderHandle) {
+      if (shaderCache.count(shaderHandle.getId())) return;
+      Shader* shader = resourcePool->get(shaderHandle);
+
+      uint id = compileShaderProgram(shader->vertexSource.c_str(), shader->fragmentSource.c_str());
+      uint aVpLoc = glGetUniformLocation(id, "aVp");
+
+      shaderCache[shaderHandle.getId()] = GPUShader{id, aVpLoc};
     }
 
     void bindTexture(Handle<Image> imageHandle) {
@@ -244,16 +261,6 @@ struct OpenGLRenderer : Renderer {
       printf("Loaded mesh to gpu\n");
     }
 
-    void bindShader(Handle<Shader> shaderHandle) {
-      if (shaderCache.count(shaderHandle.getId())) return;
-      Shader* shader = resourcePool->get(shaderHandle);
-
-      uint id = compileShaderProgram(shader->vertexSource.c_str(), shader->fragmentSource.c_str());
-      uint aVpLoc = glGetUniformLocation(id, "aVp");
-
-      shaderCache[shaderHandle.getId()] = GPUShader{id, aVpLoc};
-    }
-
     void render() {
       // const std::vector<DrawCommand> &commands
       // before anything else, the render system
@@ -264,7 +271,6 @@ struct OpenGLRenderer : Renderer {
       // if a bunch of models have the same mesh
       // handle and material then they should
       // automatically use instancing
-
       // we look through all the commands first
       // if there is anything not loaded we load it
       // this include meshes, materials, images, etc
@@ -278,16 +284,13 @@ struct OpenGLRenderer : Renderer {
       glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-
       // V_clip = M_proj * M_view * M_model * V_local
 
       sceneGraph->eachCamera([&](CameraData& cameraData){
-        glm::mat4 projection = glm::perspective(glm::radians(45.f), (float)framebufferWidth/(float)framebufferHeight, 0.1f, 1000.f);
-        glm::mat4 view = glm::lookAt(
-          glm::vec3(20, 20, 20),
-          glm::vec3(0.0f, 0.0f, 0.0f),
-          glm::vec3(0.0f, 1.0f, 0.0f)
-        );
+        //Matrix4x4F a = transformMatrix(toVector3F(cameraData.position), cameraData.scale, cameraData.rotation);
+        //toGlm(a);
+        glm::mat4 view = createViewMatrix(cameraData.position, cameraData.scale, cameraData.rotation);
+        glm::mat4 projection = createProjMatrix(90.f, (float)framebufferWidth/(float)framebufferHeight, 0.1f, 1000.f);
 
         glm::mat4 vp = projection * view;
 
@@ -302,17 +305,40 @@ struct OpenGLRenderer : Renderer {
           bindMesh(meshHandle);
           GPUMesh& gpuMesh = meshCache[meshHandle.getId()];
 
-          //bindImage(imageHandle);
-          //GPUTexture& gpuTexture = textureCache[imageHandle.getId()];
-          //glActiveTexture(GL_TEXTURE0);
-          //glBindTexture(GL_TEXTURE_2D, gpuTexture.glTex);
-          //glUniform1i(glGetUniformLocation(shaderProgramId, "uAlbedo"), 0);
+          Material* material = resourcePool->get(materialHandle);
+          //const std::string s = material->shaderId; // this may need to be optimized
+          Handle<Shader> shaderHandle = resourcePool->load<Shader>("example/shaders/default.glsl");
 
           bindShader(shaderHandle);
           GPUShader& gpuShader = shaderCache[shaderHandle.getId()];
-          glUseProgram(gpuShader.id);
 
+          glUseProgram(gpuShader.id);
           glUniformMatrix4fv(gpuShader.aVpLoc, 1, GL_FALSE, glm::value_ptr(vp));
+
+          // TODO: cache uniform locations in hashmap on GPUShader
+          for (auto& [key, value] : material->floats) {
+            glUniform1f(glGetUniformLocation(gpuShader.id, key.c_str()), value);
+          }
+
+          for (auto& [key, value] : material->vectors) {
+            glUniform4f(glGetUniformLocation(gpuShader.id, key.c_str()), value.x, value.y, value.z, value.w);
+          }
+
+          /*
+          for (auto& [key, value] : material->textures) {
+            GPUTexture* gpuTexture = textureCache[value.getId()];
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, gpuTexture.glText);
+            uint loc = glGetUniformLocation(gpuShader.id, key.c_str());
+            glUniform1i(loc, value);
+
+            //bindImage(imageHandle);
+            //GPUTexture& gpuTexture = textureCache[imageHandle.getId()];
+            //glActiveTexture(GL_TEXTURE0);
+            //glBindTexture(GL_TEXTURE_2D, gpuTexture.glTex);
+            //glUniform1i(glGetUniformLocation(shaderProgramId, "uAlbedo"), 0);
+          }
+          */
           
           std::vector<glm::mat4> glmodels;
           for (int i = 0; i < numInstances; ++i) {

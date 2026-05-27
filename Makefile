@@ -3,6 +3,9 @@ run:
 	cmake --build build # >> build.log 2>&1
 	nvidia-offload mangohud ./build/example
 
+execute:
+	nvidia-offload mangohud ./build/example
+
 test:
 	cmake -B build -DCMAKE_BUILD_TYPE=Debug
 	cmake --build build

@@ -70,7 +70,7 @@ struct Application {
       context->frameTime = elapsed.count();
 
       elapsed = std::chrono::high_resolution_clock::now() - startTime;
-      context->runTime = elapsed.count();
+      context->runtime = elapsed.count();
 
       context->running = !context->renderer->shouldClose();
 

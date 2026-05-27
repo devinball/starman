@@ -35,7 +35,7 @@ struct SceneManager {
       // TODO: High numbers of meshes do not preform as well as i would like
 
       Entity camera = context->registry->create();
-      context->registry->emplace<Spatial>(camera, Vector3(0, 0, 0), Vector3F{1, 1, 1}, eulerToQuat(0, 0, 0));
+      context->registry->emplace<Spatial>(camera, Vector3(0, 10, 0), Vector3F{1, 1, 1}, eulerToQuat(0, 0, 6 * 3.14 * 0.25));
       context->registry->emplace<Camera>(camera, 0, 90.0f, Color(0, 0, 0.2, 1), true, 0);
 
       float d = 0.5;
@@ -44,7 +44,7 @@ struct SceneManager {
         Entity e = context->registry->create();
         context->registry->emplace<Spatial>(e, Vector3(std::sin(i * d) * std::sqrt(i) * d, 0, std::cos(i * d) * std::sqrt(i) * d), Vector3F{1, 1, 1}, eulerToQuat(i, 0, 0));
         Handle<Mesh> mesh = context->resourcePool->load<Mesh>("example/models/simple_frog.stl");
-        Handle<Material> material = Handle<Material>();//context->resourcePool->load<Material>("example/models/frog.mat");
+        Handle<Material> material = context->resourcePool->load<Material>("example/materials/steel.yaml");
         context->registry->emplace<MeshRenderer>(e, mesh, material);
         context->registry->emplace<Rigidbody>(e);
       }

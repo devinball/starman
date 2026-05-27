@@ -109,6 +109,6 @@ struct SceneGraph {
 
   void clear() {
     models.clear();
-    //cameras.clear();
+    cameras.clear();
   }
 };

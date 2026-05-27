@@ -100,6 +100,8 @@ pkgs.mkShell {
       pkgs.xorg.libXcursor
       pkgs.zlib
       pkgs.glfw
+      pkgs.xorg.libxcb
+      pkgs.libglvnd
     ]}:$LD_LIBRARY_PATH
   '';
 }
