@@ -1,0 +1,16 @@
+- entity: 0
+  Spatial:
+    position: [0, 0, 0]
+    scale: [1, 1, 1]
+    rotation: [0, 0, 0, 0] # quat if size == 4, euler if size == 3
+  MeshRenderer:
+    mesh: example/models/frog.obj
+    material: example/materials/fabric.yaml
+- entity: 1
+  Spatial:
+    position: [5, 0, 0]
+    scale: [1, 1, 1]
+    rotation: [0, 0, 0, 0] # quat if size == 4, euler if size == 3
+  MeshRenderer:
+    mesh: example/models/frog.obj
+    material: example/materials/steel.yaml

@@ -54,7 +54,6 @@ struct RenderSystem : System {
           0, 0, 90.f, true,
           Color{0, 0, 0.2, 1.0},
           spatial.position,
-          spatial.scale,
           spatial.rotation
         );
       });

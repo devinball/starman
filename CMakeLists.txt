@@ -89,6 +89,25 @@ CPMAddPackage(
   GIT_TAG yaml-cpp-0.9.0
 )
 
+CPMAddPackage(
+    NAME stb
+    GITHUB_REPOSITORY nothings/stb
+    GIT_TAG master
+    DOWNLOAD_ONLY YES)
+
+if(stb_ADDED)
+    add_library(stb INTERFACE)
+    target_include_directories(stb INTERFACE "${stb_SOURCE_DIR}")
+endif()
+
+CPMAddPackage(
+    NAME reflectcpp
+    GITHUB_REPOSITORY getml/reflect-cpp
+    GIT_TAG v0.25.0
+)
+
+set(REFLECTCPP_YAML ON)
+
 # =============================================================================
 # Engine library sources
 # =============================================================================
@@ -124,10 +143,12 @@ find_package(glfw3 REQUIRED)
 target_link_libraries(engine PUBLIC
     glad
     glfw
-    Boost::multiprecision
+    #Boost::multiprecision
     EnTT::EnTT
+    reflectcpp
     yaml-cpp
     assimp
+    stb
 )
 
 # =============================================================================

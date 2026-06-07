@@ -7,32 +7,39 @@
 #include "ecs/components/camera.hpp"
 #include "ecs/components/camera_controller.hpp"
 
+#include "core/input_buffer.hpp"
+
 struct CameraSystem : System {
   private:
     void localizeMesh(); // convert from Number space to local float
 
     float t;
   public:
-    void init() {
-      
-    }
-
     void update() {
       t += context->frameTime;
-      auto cameraView = context->registry->view<Camera>();
-      auto cameraControllerView = context->registry->view<Camera, Spatial>();
+      auto view = context->registry->view<CameraController, Spatial>();
       
-      cameraView.each([this](auto &camera){
-        // idk
-      });
+      view.each([this](auto &cameraController, auto &spatial){
+        Vector3 direction({
+          (int)context->inputBuffer->right - (int)context->inputBuffer->left,
+          (int)context->inputBuffer->up - (int)context->inputBuffer->down,
+          (int)context->inputBuffer->backward - (int)context->inputBuffer->forward
+        });
 
-      cameraControllerView.each([this](auto &cameraController, auto &spatial){
-        Vector3 direction({1, 1, 1});
-        spatial.position += direction * cameraController.speed;
-      });
-    }
+        QuaternionF qConj = spatial.rotation.conjugate();
+        QuaternionF qDir(0, direction.x, direction.y, direction.z);
+        QuaternionF qGlobal = spatial.rotation * qDir * qConj;
 
-    void draw() {
-      
+        Vector3 globalDirection(qGlobal.i, qGlobal.j, qGlobal.k);
+
+        spatial.position = spatial.position + globalDirection * cameraController.speed * context->dt;
+
+        cameraController.pitch += 10 * context->inputBuffer->dy * context->dt;
+        cameraController.yaw += 10 * context->inputBuffer->dx * context->dt;
+
+        //cameraController.pitch += 10 * context->dt;
+
+        spatial.rotation = eulerToQuaternion(0, cameraController.yaw, cameraController.pitch);
+      });
     }
 };

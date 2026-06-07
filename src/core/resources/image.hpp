@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/resources/resource.hpp"
+#include "core/filesystem/image.hpp"
 
 #include <stdint.h>
 #include <vector>
@@ -20,12 +21,12 @@ enum class WrapMode
 struct Image : Resource {
   using Resource::Resource;
 
-  const uint16_t width = 0;
-  const uint16_t height = 0;
-  const uint8_t channels = 4;
-  const uint8_t depth = 8;
+  int width;
+  int height;
+  int channels;
+  int depth;
+  unsigned char *data;
   // probably should be a byte array
-  std::vector<uint8_t> pixels;
 
   FilterMode filter  = FilterMode::Linear;
   WrapMode   wrapU   = WrapMode::Repeat;
@@ -33,11 +34,20 @@ struct Image : Resource {
   bool       genMips = true;
 
   bool load() override {
-    return true;
+    data = stbi_load(getId().c_str(), &width, &height, &channels, 0);
+
+    if (data) {
+      printf("Loaded Image: %s\n", getId().c_str());
+      return true;
+    }
+
+    printf("uhoh a: %s\n", getId().c_str());
+    
+    return false;
   }
 
   bool unload() override {
-    pixels.clear();
+    stbi_image_free(data);
     return true;
   }
 };

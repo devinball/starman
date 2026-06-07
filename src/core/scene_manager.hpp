@@ -5,13 +5,17 @@
 #include "ecs/ecs.hpp"
 #include "core/context.hpp"
 #include "core/resources/scene.hpp"
+#include "core/math/utilities.hpp"
+
+#include "ecs/systems/render_system.hpp"
+#include "ecs/systems/physics_system.hpp"
+#include "ecs/systems/camera_system.hpp"
+
 #include "ecs/components/spatial.hpp"
 #include "ecs/components/mesh_renderer.hpp"
 #include "ecs/components/rigidbody.hpp"
 #include "ecs/components/camera.hpp"
-#include "ecs/systems/render_system.hpp"
-#include "ecs/systems/physics_system.hpp"
-#include "core/math/utilities.hpp"
+#include "ecs/components/camera_controller.hpp"
 
 #include <memory>
 #include <vector>
@@ -24,6 +28,10 @@
 // an event could be a draw call, a resource load or get request
 // it could be a scene load, or a window close
 
+// it might be kinda cool if scenes had basic 'macros'
+// so you could specify to copy an object n times
+// with its position varying by some amount per instance
+
 struct SceneManager {
   private:
     std::vector<std::unique_ptr<System>> systems;
@@ -32,36 +40,36 @@ struct SceneManager {
     std::shared_ptr<Context> context;
 
     void init() {
-      // TODO: High numbers of meshes do not preform as well as i would like
-
-      Entity camera = context->registry->create();
-      context->registry->emplace<Spatial>(camera, Vector3(0, 10, 0), Vector3F{1, 1, 1}, eulerToQuat(0, 0, 6 * 3.14 * 0.25));
-      context->registry->emplace<Camera>(camera, 0, 90.0f, Color(0, 0, 0.2, 1), true, 0);
-
-      float d = 0.5;
-
-      for (int i = 0; i < 250; ++i) {
-        Entity e = context->registry->create();
-        context->registry->emplace<Spatial>(e, Vector3(std::sin(i * d) * std::sqrt(i) * d, 0, std::cos(i * d) * std::sqrt(i) * d), Vector3F{1, 1, 1}, eulerToQuat(i, 0, 0));
-        Handle<Mesh> mesh = context->resourcePool->load<Mesh>("example/models/simple_frog.stl");
-        Handle<Material> material = context->resourcePool->load<Material>("example/materials/steel.yaml");
-        context->registry->emplace<MeshRenderer>(e, mesh, material);
-        context->registry->emplace<Rigidbody>(e);
-      }
+      YAML::Node config = YAML::LoadFile("example/scenes/simple.yaml");
 
       /*
-      for (int i = 0; i < 250; ++i) {
-        Entity e = context->registry->create();
-        context->registry->emplace<Spatial>(e, Vector3(std::sin(i * d) * std::sqrt(i) * d, 2, std::cos(i * d) * std::sqrt(i) * d), Vector3F{1, 1, 1}, eulerToQuat(i, 0, 0));
-        Handle<Mesh> mesh = context->resourcePool->load<Mesh>("example/models/monkey.stl");
-        Handle<Material> material = Handle<Material>();//context->resourcePool->load<Material>("example/models/frog.mat");
-        context->registry->emplace<MeshRenderer>(e, mesh, material);
-        context->registry->emplace<Rigidbody>(e);
+      if (config["entities"]) {
+        
       }
       */
 
+
+      // TODO: High numbers of meshes do not preform as well as i would like
+
+      Entity camera = context->registry->create();
+      context->registry->emplace<Spatial>(camera, Vector3(0, 10, 0), Vector3F{1, 1, 1}, QuaternionF());
+      context->registry->emplace<Camera>(camera, 0, 90.0f, Color(0, 0, 0.2, 1), true, 0);
+      context->registry->emplace<CameraController>(camera, 50);
+
+      float d = 0.5;
+
+      for (int i = 0; i < 1000; ++i) {
+        Entity e = context->registry->create();
+        context->registry->emplace<Spatial>(e, Vector3(25 * (randomF() * 2 - 1), 25 * (randomF() * 2 - 1), 25 * (randomF() * 2 - 1)), Vector3F{1, 1, 1}, QuaternionF());
+        Handle<Mesh> mesh = context->resourcePool->load<Mesh>("example/models/simple_frog.obj");
+        Handle<Material> material = context->resourcePool->load<Material>("example/materials/fabric.yaml");
+        context->registry->emplace<MeshRenderer>(e, mesh, material);
+        context->registry->emplace<Rigidbody>(e, 100, Vector3(randomF() * 2 - 1, randomF() * 2 - 1, randomF() * 2 - 1) * 10, QuaternionF());
+      }
+
       addSystem<RenderSystem>();
       addSystem<PhysicsSystem>();
+      addSystem<CameraSystem>();
 
       for (auto& system : systems) {
         system->context = context;

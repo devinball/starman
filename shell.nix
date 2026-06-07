@@ -29,20 +29,20 @@ pkgs.mkShell {
     mangohud
 
     # ---- System libraries SDL3 needs on Linux ----
-    xorg.libX11
-    xorg.libXext
-    xorg.libXrandr
-    xorg.libXi
-    xorg.libXcursor
-    xorg.libXinerama
-    xorg.libXfixes
-    xorg.libXScrnSaver
-    xorg.libxcb
-    xorg.xcbutil
-    xorg.xcbutilwm
-    xorg.xcbutilimage
-    xorg.xcbutilkeysyms
-    xorg.xcbutilrenderutil
+    libX11
+    libXext
+    libXrandr
+    libXi
+    libXcursor
+    libXinerama
+    libXfixes
+    libXScrnSaver
+    libxcb
+    xcbutil
+    xcbutilwm
+    xcbutilimage
+    xcbutilkeysyms
+    xcbutilrenderutil
     libGL
     libGLU
     mesa
@@ -89,18 +89,18 @@ pkgs.mkShell {
       pkgs.libffi.dev
       pkgs.wayland.dev
       pkgs.wayland-protocols
-      pkgs.xorg.libxcb
-      pkgs.xorg.libxcb.dev
+      pkgs.libxcb
+      pkgs.libxcb.dev
       pkgs.libGL
       pkgs.libGLU
-      pkgs.xorg.libX11
-      pkgs.xorg.libXrandr
-      pkgs.xorg.libXinerama
-      pkgs.xorg.libXi
-      pkgs.xorg.libXcursor
+      pkgs.libX11
+      pkgs.libXrandr
+      pkgs.libXinerama
+      pkgs.libXi
+      pkgs.libXcursor
       pkgs.zlib
       pkgs.glfw
-      pkgs.xorg.libxcb
+      pkgs.libxcb
       pkgs.libglvnd
     ]}:$LD_LIBRARY_PATH
   '';

@@ -9,6 +9,7 @@ struct SceneGraph;
 struct SceneManager;
 struct ResourcePool;
 struct Renderer;
+struct InputBuffer;
 
 struct Context {
   bool running = true;
@@ -20,18 +21,21 @@ struct Context {
   std::shared_ptr<ResourcePool> resourcePool;
   std::shared_ptr<Registry> registry;
   std::shared_ptr<Renderer> renderer;
+  std::shared_ptr<InputBuffer> inputBuffer;
 
   Context(
     std::shared_ptr<SceneGraph> sceneGraph,
     std::shared_ptr<SceneManager> sceneManager,
     std::shared_ptr<ResourcePool> resourcePool,
     std::shared_ptr<Registry> registry,
-    std::shared_ptr<Renderer> renderer
+    std::shared_ptr<Renderer> renderer,
+    std::shared_ptr<InputBuffer> inputBuffer
   ) {
     this->sceneGraph = sceneGraph;
     this->sceneManager = sceneManager;
     this->resourcePool = resourcePool;
     this->registry = registry;
     this->renderer = renderer;
+    this->inputBuffer = inputBuffer;
   }
 };

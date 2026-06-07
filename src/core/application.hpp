@@ -5,6 +5,7 @@
 #include "core/layers/layer.hpp"
 #include "core/rendering/opengl/opengl_renderer.hpp"
 #include "core/scene_manager.hpp"
+#include "core/input_buffer.hpp"
 
 #include <memory>
 #include <chrono>
@@ -30,13 +31,15 @@ struct Application {
       std::make_shared<SceneManager>(),
       std::make_shared<ResourcePool>(),
       std::make_shared<Registry>(),
-      std::make_shared<OpenGLRenderer>()
+      std::make_shared<OpenGLRenderer>(),
+      std::make_shared<InputBuffer>()
     );
 
     context->dt = 1 / physicsFrequency; // well it should be anyways
 
     context->renderer->resourcePool = context->resourcePool;
     context->renderer->sceneGraph = context->sceneGraph;
+    context->renderer->inputBuffer = context->inputBuffer;
     context->renderer->init({800, 600, "engine", false, false});
 
     context->sceneManager->context = context; // this feels wrong...

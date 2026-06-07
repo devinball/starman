@@ -27,7 +27,7 @@ void noAbstractionTest() {
         Handle<Material>(),
         Vector3(std::sin(i * d) * std::sqrt(i) * d, 0, std::cos(i * d) * std::sqrt(i) * d),
         Vector3F(1, 1, 1),
-        eulerToQuat(t, t, t)
+        eulerToQuaternion(t, t, t)
       );
     }
 
@@ -36,8 +36,7 @@ void noAbstractionTest() {
       0, 0, 90.f, true,
       Color{0, 0, 0.2, 1.0},
       Vector3{0, 0, 0},
-      Vector3F{1, 1, 1},
-      eulerToQuat(0, 0, 0)
+      eulerToQuaternion(0, 0, 0)
     );
     
     auto start = std::chrono::system_clock::now();

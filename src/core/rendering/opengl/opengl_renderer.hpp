@@ -3,6 +3,9 @@
 #include "core/renderer.hpp"
 #include "core/resources/mesh.hpp"
 #include "core/math/utilities.hpp"
+#include "core/resources/shader.hpp"
+#include "core/resources/image.hpp"
+#include "core/resources/material.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -10,6 +13,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>    
+
 
 glm::mat4 toGlm(Matrix4x4F& mat) {
   return glm::make_mat4(mat.getData().data());
@@ -20,16 +24,26 @@ glm::mat4 toGlm(Matrix4x4& mat) {
   return glm::make_mat4(floatVector.data());
 }
 
-// TODO: does not do scale, probably not important tho
-glm::mat4 createViewMatrix(Vector3 position, Vector3F scale, QuaternionF rotation) {
-  glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3((float)position.x, (float)position.y, (float)position.z));
-  glm::mat4 rotationMatrix = glm::mat4_cast(glm::quat(rotation.r, rotation.i, rotation.j, rotation.k));
-  glm::mat4 worldMatrix = translationMatrix * rotationMatrix;
-  return glm::inverse(worldMatrix);
-}
-
 glm::mat4 createProjMatrix(float fov, float aspectRatio, float near, float far) {
   return glm::perspective(glm::radians(fov), aspectRatio, near, far);
+}
+
+glm::mat4 createTransformMatrix(const Vector3F& position, const Vector3F& scale, const QuaternionF& rotation) {
+  glm::quat q(rotation.r, rotation.i, rotation.j, rotation.k);
+  glm::mat4 rotationMatrix = glm::mat4_cast(q);
+  glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
+  glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(position.x, position.y, position.z));
+
+  return translationMatrix * rotationMatrix * scaleMatrix;
+}
+
+glm::mat4 createViewMatrix(const Vector3F& position, const QuaternionF& rotation) {
+  glm::quat q(rotation.r, rotation.i, rotation.j, rotation.k);
+  glm::mat4 cameraTransform = glm::mat4(1.0f);
+  cameraTransform = glm::translate(cameraTransform, glm::vec3(position.x, position.y, position.z));
+  cameraTransform *= glm::mat4_cast(q);
+
+  return glm::inverse(cameraTransform);
 }
 
 int framebufferWidth = 0;
@@ -40,9 +54,18 @@ struct OpenGLRenderer : Renderer {
     GLFWwindow* window;
 
     void processInput() {
+      glfwPollEvents();
+
       if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
       }
+
+      inputBuffer->forward = glfwGetKey(window, GLFW_KEY_W);
+      inputBuffer->backward = glfwGetKey(window, GLFW_KEY_S);
+      inputBuffer->left = glfwGetKey(window, GLFW_KEY_A);
+      inputBuffer->right = glfwGetKey(window, GLFW_KEY_D);
+      inputBuffer->up = glfwGetKey(window, GLFW_KEY_SPACE);
+      inputBuffer->down = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT);
     }
 
     uint maxInstances = 1000;
@@ -115,6 +138,7 @@ struct OpenGLRenderer : Renderer {
         glViewport(0, 0, framebufferWidth, framebufferHeight);
       });
 
+      // 0 for vsync off 1 for vsync on
       glfwSwapInterval(0);
 
       glEnable(GL_DEPTH_TEST);
@@ -125,8 +149,28 @@ struct OpenGLRenderer : Renderer {
       // wireframe mode
       // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
       
+      // capture mouse
+      glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+      glfwSetWindowUserPointer(window, this);
+      glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
+        auto renderer = static_cast<OpenGLRenderer*>(glfwGetWindowUserPointer(window));
+
+        double dx = xpos - renderer->lastX;
+        double dy = ypos - renderer->lastY;
+
+        renderer->inputBuffer->dx = -dx;
+        renderer->inputBuffer->dy = -dy;
+
+        //printf("%f %f\n", dx, dy);
+
+        renderer->lastX = xpos;
+        renderer->lastY = ypos;
+      });
+
       printf("Completed Setup\n");
     }
+
+    double lastX, lastY;
 
     void beginFrame() {
       processInput();
@@ -172,7 +216,7 @@ struct OpenGLRenderer : Renderer {
       glDeleteShader(vertexShader);
       glDeleteShader(fragmentShader);
 
-      printf("Compiled Shader Program\n");
+      //printf("Compiled Shader Program\n");
 
       return shaderProgram;
     }
@@ -194,9 +238,17 @@ struct OpenGLRenderer : Renderer {
       uint glTex;
       glGenTextures(1, &glTex);
       glBindTexture(GL_TEXTURE_2D, glTex);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->width, image->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image->pixels.data());
-      glGenerateMipmap(GL_TEXTURE_2D);
+      
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->width, image->height, 0, GL_RGB, GL_UNSIGNED_BYTE, image->data);
+      glGenerateMipmap(GL_TEXTURE_2D);
+
+      // TODO: stbi_image_free(data);
+      
       textureCache[imageHandle.getId()] = { glTex };
     }
 
@@ -258,7 +310,7 @@ struct OpenGLRenderer : Renderer {
       // TODO: this should really be in render() with the check
       
 
-      printf("Loaded mesh to gpu\n");
+      //printf("Loaded mesh to gpu\n");
     }
 
     void render() {
@@ -286,12 +338,27 @@ struct OpenGLRenderer : Renderer {
 
       // V_clip = M_proj * M_view * M_model * V_local
 
+      // TODO: camera position should always be zero (or about zero)
+      // this should also let me make a couple subtle optimizations
+
+      // i need to essentially shift everything over by -cameraData.position
+      // hopefully should be simple? my other concern is floating point errors
+      // within a mesh, given an exceptionally large mesh (planet size), there
+      // will be floating point errors if i naively make a really big mesh.
+      // so, maybe i chunk it? or, and this may be stupid, i could move
+      // meshes closer to the camera, while scaling them down.
+      // but that's just what the camera's projection matricies do anyways!
+      // so what's the point then?, i suppose i may just have to begin testing
+      // things in order to determine the important of this issue
+
+      // speaking of optimizations i need to not delete the scene graph every
+      // frame, lots of data should be able to persist between frames
+
       sceneGraph->eachCamera([&](CameraData& cameraData){
         //Matrix4x4F a = transformMatrix(toVector3F(cameraData.position), cameraData.scale, cameraData.rotation);
         //toGlm(a);
-        glm::mat4 view = createViewMatrix(cameraData.position, cameraData.scale, cameraData.rotation);
+        glm::mat4 view = createViewMatrix(Vector3F((float)cameraData.position.x, (float)cameraData.position.y, (float)cameraData.position.z), cameraData.rotation);
         glm::mat4 projection = createProjMatrix(90.f, (float)framebufferWidth/(float)framebufferHeight, 0.1f, 1000.f);
-
         glm::mat4 vp = projection * view;
 
         sceneGraph->eachModel(identityMatrix4x4F(), [&](Handle<Mesh> meshHandle, Handle<Material> materialHandle, std::vector<ModelData>& modelDatas) {
@@ -307,7 +374,7 @@ struct OpenGLRenderer : Renderer {
 
           Material* material = resourcePool->get(materialHandle);
           //const std::string s = material->shaderId; // this may need to be optimized
-          Handle<Shader> shaderHandle = resourcePool->load<Shader>("example/shaders/default.glsl");
+          Handle<Shader> shaderHandle = resourcePool->load<Shader>(material->shaderId);
 
           bindShader(shaderHandle);
           GPUShader& gpuShader = shaderCache[shaderHandle.getId()];
@@ -324,28 +391,25 @@ struct OpenGLRenderer : Renderer {
             glUniform4f(glGetUniformLocation(gpuShader.id, key.c_str()), value.x, value.y, value.z, value.w);
           }
 
-          /*
+          uint8_t slot = 0;
           for (auto& [key, value] : material->textures) {
-            GPUTexture* gpuTexture = textureCache[value.getId()];
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, gpuTexture.glText);
-            uint loc = glGetUniformLocation(gpuShader.id, key.c_str());
-            glUniform1i(loc, value);
+            Handle<Image> imageHandle = resourcePool->load<Image>(value);
+            bindTexture(imageHandle);
 
-            //bindImage(imageHandle);
-            //GPUTexture& gpuTexture = textureCache[imageHandle.getId()];
-            //glActiveTexture(GL_TEXTURE0);
-            //glBindTexture(GL_TEXTURE_2D, gpuTexture.glTex);
-            //glUniform1i(glGetUniformLocation(shaderProgramId, "uAlbedo"), 0);
+            GPUTexture& gpuTexture = textureCache[imageHandle.getId()];
+
+            glActiveTexture(GL_TEXTURE0 + slot);
+            glBindTexture(GL_TEXTURE_2D, gpuTexture.glTex);
+            glUniform1i(glGetUniformLocation(gpuShader.id, key.c_str()), slot);
+
+            ++slot;
           }
-          */
           
           std::vector<glm::mat4> glmodels;
           for (int i = 0; i < numInstances; ++i) {
             ModelData modelData = modelDatas[i];
             Vector3F relativePosition = {(float)modelData.position.x, (float)modelData.position.y, (float)modelData.position.z};
-            Matrix4x4F model = transformMatrix(relativePosition, modelData.scale, modelData.rotation);
-            glmodels.push_back(toGlm(model));
+            glmodels.push_back(createTransformMatrix(relativePosition, modelData.scale, modelData.rotation));
           }
 
           glBindBuffer(GL_ARRAY_BUFFER, gpuMesh.instanceVBO);
@@ -360,7 +424,6 @@ struct OpenGLRenderer : Renderer {
 
     void endFrame() {
       glfwSwapBuffers(window);
-      glfwPollEvents();
     }
 
     void shutdown() {

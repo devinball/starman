@@ -1,4 +1,6 @@
-shader: "example/shaders/default.glsl"
+shader: "example/shaders/tex.glsl"
+filterMode: "linear"
 properties:
-  - albedo: [0.1, 0.8, 0.1, 1.0]
-  - ambient: 0.05
+  ambient: 0.05
+  tex: "example/textures/checker.png"
+  extra: [0.1, 0.1, 0.1, 0.1]

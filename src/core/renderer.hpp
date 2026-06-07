@@ -2,6 +2,7 @@
 
 #include "core/scene_graph.hpp"
 #include "core/resource_pool.hpp"
+#include "core/input_buffer.hpp"
 
 // TODO: include fullscreen, vsync in OpenGLRenderer
 struct WindowSettings {
@@ -17,6 +18,7 @@ enum RenderMode { DEFAULT, NORMAL, WIREFRAME, DEPTH, LIGHTING, MOTION_VECTORS, U
 struct Renderer {
   std::shared_ptr<ResourcePool> resourcePool;
   std::shared_ptr<SceneGraph> sceneGraph;
+  std::shared_ptr<InputBuffer> inputBuffer;
 
   virtual ~Renderer() = default;
   virtual void init(const WindowSettings settings) = 0;

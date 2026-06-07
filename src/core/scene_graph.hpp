@@ -30,7 +30,6 @@ struct CameraData {
   bool doClear = true;
   int priority = 0;
   Vector3 position;
-  Vector3F scale;
   QuaternionF rotation;
 };
 
@@ -73,14 +72,13 @@ struct SceneGraph {
   // Mesh has many Materials has many Matrix
   //std::unordered_map<Handle<Mesh>, std::unordered_map<Handle<Material>, std::vector<Matrix4x4F>> models;
 
-  void submitCamera(int id, int priority, float fov, bool doClear, Color clearColor, Vector3 position, Vector3F scale, QuaternionF rotation) {
+  void submitCamera(int id, int priority, float fov, bool doClear, Color clearColor, Vector3 position, QuaternionF rotation) {
     cameras[id] = CameraData{
       fov,
       clearColor = {0, 0, 0.2, 1},
       doClear = true,
       priority = 0,
       position,
-      scale,
       rotation
     };
   }

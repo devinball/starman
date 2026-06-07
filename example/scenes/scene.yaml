@@ -3,7 +3,7 @@
 # at our sun
 
 entities:
-  - entity1: # name does not actually matter
+  - EntityDescription:
     - Spatial:
       position: [1000, 1000, 1000]
     - MeshRenderer:
@@ -14,20 +14,19 @@ entities:
         velocity: [0, 0, 0]
     - Tag:
         name: Ship
-  - entity2:
+  - EntityDescription:
     - Spatial:
         position: [0, 0, 0]
     - MeshRenderer:
         mesh_source: DEFAULT_SPHERE
         material_source: materials/ship.mat
-    -FixedOrbit:
+    - FixedOrbit:
       apoapsis: 100
       periapsis: 100
       eccentricity: 100
       semi_major_axis: 100
       semi_minor_axis: 100
       semi_parameter: 100
-
     - Star:
         luminous_intensity: 1000,
         type: red_dwarf

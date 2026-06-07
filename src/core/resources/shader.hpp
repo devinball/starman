@@ -64,7 +64,7 @@ struct Shader : Resource {
   // then you would reference a shader by id, the renderer
   // does all the translating
 
-  // LLM-WRITTEN
+  // Kinda LLM-WRITTEN
   bool load() override {
     std::ifstream file(getId().c_str());
 
@@ -107,6 +107,8 @@ struct Shader : Resource {
       printf("Vertex and Fragment are needed for shader: %s", getId().c_str());
       return false;
     }
+
+    printf("Loaded shader: %s\n", getId().c_str());
 
     return true;
   }

@@ -1,26 +1,20 @@
 #pragma once
 
 #include "core/resources/resource.hpp"
-#include "core/handle.hpp"
-#include "core/resources/shader.hpp"
 #include "core/math/vector.hpp"
-#include "core/resources/image.hpp"
+#include "core/filesystem/file.hpp"
 
-#include "yaml-cpp/yaml.h"
-#include <map>
+#include "rfl.hpp"
+#include "rfl/yaml.hpp"
 
 struct Material : Resource {
   using Resource::Resource;
 
-  std::string shaderId;//Handle<Shader> shader;
+  std::string shaderId;
   
   std::unordered_map<std::string, float> floats;
   std::unordered_map<std::string, Vector4F> vectors;
-  std::unordered_map<std::string, Handle<Image>> textures;
-
-  // ideally i want to be able to say material.uniforms["albedo_texture"] = some_image;
-  // then this image would be loaded to the gpu and cached
-  // you could also do material.uniforms["albedo_color"] = Vector4F{1, 1, 1, 1}; // or Color(1, 1, 1, 1);
+  std::unordered_map<std::string, std::string> textures;
 
   void set(std::string key, float value) {
     floats[key] = value;
@@ -30,52 +24,42 @@ struct Material : Resource {
     vectors[key] = value;
   }
 
-  void set(std::string key, Handle<Image> value) {
+  void set(std::string key, std::string value) {
     textures[key] = value;
   }
 
+  struct Config {
+    std::string shader;
+    std::string filterMode;
+    std::unordered_map<std::string, rfl::Variant<float, std::string, std::array<float, 4>>> properties;
+  };
+
   bool load() override {
-    YAML::Node config = YAML::LoadFile(getId().c_str());
+    auto result = rfl::yaml::read<Config>(readFile(getId())).value();
 
-    if (config["shader"]) {
-      shaderId = config["shader"].as<std::string>();
-    }
+    shaderId = result.shader;
 
-    if (config["properties"]) {
-      for (const auto& property : config["properties"]) {
-        for (const auto& kv : property) {
-          std::string key = kv.first.as<std::string>();
-          const YAML::Node& value = kv.second;
+    for (const auto& prop : result.properties) {
+      const auto& [key, value] = prop;
 
-          if (value.IsSequence() && value.size() == 4) {
-            set(key, Vector4F(
-              value[0].as<float>(),
-              value[1].as<float>(),
-              value[2].as<float>(),
-              value[3].as<float>()
-            ));
-          }
-          else if (value.IsSequence() && value.size() == 3) {
-            set(key, Vector4F(
-              value[0].as<float>(),
-              value[1].as<float>(),
-              value[2].as<float>()
-            ));
-          }
-          else if (value.IsSequence() && value.size() == 2) {
-            set(key, Vector4F(
-              value[0].as<float>(),
-              value[1].as<float>()
-            ));
-          }
-          else if (value.IsScalar()) {
-            set(key, value.as<float>());
-          }
-          else {
-            printf("Unrecognized property type");
-          }
+      const auto visitor = [&](const auto& v) {
+        using Type = std::decay_t<decltype(v)>;
+
+        if constexpr (std::is_same<Type, float>()) {
+          set(key, v);
         }
-      }
+        else if constexpr (std::is_same<Type, std::string>()) {
+          set(key, v);
+        }
+        else if constexpr (std::is_same<Type, std::array<float, 4>>()) {
+          set(key, Vector4F(v[0], v[1], v[2], v[3]));
+        }
+        else {
+          printf("Could not load type in material: %s\n", getId().c_str());
+        }
+      };
+
+      value.visit(visitor);
     }
 
     return true;

@@ -14,6 +14,39 @@ Matrix4x4F identityMatrix4x4F() {
   });
 }
 
+float radians(float x) {
+  return x * (3.14159265 / 180);
+}
+
+// ROLL, YAW, PITCH - at least for camera, no idea why
+QuaternionF eulerToQuaternion(float yaw, float pitch, float roll)
+{
+    // Convert degrees to radians
+    float y = radians(yaw);
+    float p = radians(pitch);
+    float r = radians(roll);
+    
+    // Precompute half angles and their trig values
+    float cy = cos(y * 0.5f);
+    float sy = sin(y * 0.5f);
+    float cp = cos(p * 0.5f);
+    float sp = sin(p * 0.5f);
+    float cr = cos(r * 0.5f);
+    float sr = sin(r * 0.5f);
+    
+    // Apply roll * pitch * yaw (reversed order for extrinsic/world rotations)
+    // This is equivalent to: Qroll * Qpitch * Qyaw
+    
+    QuaternionF q;
+    q.r = cr * cp * cy + sr * sp * sy;
+    q.i = sr * cp * cy - cr * sp * sy;
+    q.j = cr * sp * cy + sr * cp * sy;
+    q.k = cr * cp * sy - sr * sp * cy;
+    
+    return q;
+}
+
+/*
 QuaternionF eulerToQuat(float pitch, float yaw, float roll)
 {
   // Abbreviations for the various angular functions
@@ -30,6 +63,28 @@ QuaternionF eulerToQuat(float pitch, float yaw, float roll)
     cr * sp * cy + sr * cp * sy,
     cr * cp * sy - sr * sp * cy
   );
+}
+
+
+QuaternionF eulerToQuat(float yaw, float pitch, float roll)
+{
+  // Convert angles from degrees to radians (if needed)
+  // Assuming input is in radians; if degrees, multiply by PI/180
+  
+  float cy = cos(yaw * 0.5f);
+  float sy = sin(yaw * 0.5f);
+  float cp = cos(pitch * 0.5f);
+  float sp = sin(pitch * 0.5f);
+  float cr = cos(roll * 0.5f);
+  float sr = sin(roll * 0.5f);
+
+  QuaternionF q;
+  q.r = cr * cp * cy + sr * sp * sy;
+  q.i = sr * cp * cy - cr * sp * sy;
+  q.j = cr * sp * cy + sr * cp * sy;
+  q.k = cr * cp * sy - sr * sp * cy;
+
+  return q;
 }
 
 // --- LLM WRITTEN ---
@@ -134,8 +189,25 @@ Matrix4x4F transformMatrix(Vector3F position, Vector3F scale, QuaternionF rotati
     position.x,                        position.y,                        position.z,                        1
   });
 }
+*/
 
 Number gamma(Vector3 relativeVelocity) {
   Number v2 = relativeVelocity.squareMagnitude();
   return 1 / (sqrt(1 - (v2 / Constants::c2)));
+}
+
+Number lerp(Number a, Number b, Number t) {
+  return a + t * (b - a);
+}
+
+Number lerp(Number a, Number b, float t) {
+  return a + t * (b - a);
+}
+
+//float lerp(float a, float b, float t) {
+//  return a + t * (b - a);
+//}
+
+float randomF() {
+  return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 }
