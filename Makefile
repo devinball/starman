@@ -29,3 +29,7 @@ debug:
 	
 gfx-test:
 	nvidia-offload mangohud , glxgears
+
+doc:
+	qrenderdoc &
+	renderdoccmd capture -d . build/example

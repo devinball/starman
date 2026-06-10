@@ -65,11 +65,11 @@ struct Shader : Resource {
   // does all the translating
 
   // Kinda LLM-WRITTEN
-  bool load() override {
-    std::ifstream file(getId().c_str());
+  bool load(const std::string &path) {
+    std::ifstream file(path.c_str());
 
     if (!file.is_open()) {
-      printf("Failed to open shader: %s", getId().c_str());
+      printf("Failed to open shader: %s", path.c_str());
     }
 
     enum class Section { None, Vertex, Fragment, Geometry };
@@ -104,16 +104,16 @@ struct Shader : Resource {
     }
 
     if (vertexSource.empty() || fragmentSource.empty()) {
-      printf("Vertex and Fragment are needed for shader: %s", getId().c_str());
+      printf("Vertex and Fragment are needed for shader: %s", path.c_str());
       return false;
     }
 
-    printf("Loaded shader: %s\n", getId().c_str());
+    printf("Loaded shader: %s\n", path.c_str());
 
     return true;
   }
 
-  bool unload() override {
+  bool unload() {
     return true;
   }
 };

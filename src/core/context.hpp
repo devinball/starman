@@ -7,7 +7,7 @@
 // forward declarations
 struct SceneGraph;
 struct SceneManager;
-struct ResourcePool;
+struct ResourceManager;
 struct Renderer;
 struct InputBuffer;
 
@@ -18,7 +18,7 @@ struct Context {
   double runtime = 0;
   std::shared_ptr<SceneGraph> sceneGraph;
   std::shared_ptr<SceneManager> sceneManager;
-  std::shared_ptr<ResourcePool> resourcePool;
+  std::shared_ptr<ResourceManager> resourceManager;
   std::shared_ptr<Registry> registry;
   std::shared_ptr<Renderer> renderer;
   std::shared_ptr<InputBuffer> inputBuffer;
@@ -26,14 +26,14 @@ struct Context {
   Context(
     std::shared_ptr<SceneGraph> sceneGraph,
     std::shared_ptr<SceneManager> sceneManager,
-    std::shared_ptr<ResourcePool> resourcePool,
+    std::shared_ptr<ResourceManager> resourceManager,
     std::shared_ptr<Registry> registry,
     std::shared_ptr<Renderer> renderer,
     std::shared_ptr<InputBuffer> inputBuffer
   ) {
     this->sceneGraph = sceneGraph;
     this->sceneManager = sceneManager;
-    this->resourcePool = resourcePool;
+    this->resourceManager = resourceManager;
     this->registry = registry;
     this->renderer = renderer;
     this->inputBuffer = inputBuffer;

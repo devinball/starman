@@ -6,7 +6,6 @@
 #include "core/render_utils.hpp"
 #include "ecs/components/camera.hpp"
 #include "ecs/components/point_light.hpp"
-#include "core/handle.hpp"
 #include "core/resources/mesh.hpp"
 #include "core/resources/material.hpp"
 
@@ -19,16 +18,18 @@
 template <>
 struct std::hash<std::pair<Handle<Mesh>, Handle<Material>>> {
   std::size_t operator()(const std::pair<Handle<Mesh>, Handle<Material>>& p) const {
-    return std::hash<string>()(p.first.getId()) ^ (std::hash<string>()(p.second.getId()) << 1);
+    return std::hash<ResourceID>()(p.first.id) ^ (std::hash<ResourceID>()(p.second.id) << 1);
   }
 };
 
 struct CameraData {
-  float fov;
-  //std::shared_ptr<RenderTarget> renderTarget;
-  Color clearColor = {0, 0, 0.2, 1};
   bool doClear = true;
+  int id = 0;
   int priority = 0;
+  float fov = 90.f;
+  float near = 1.f;
+  float far = 1000.f;
+  Color clearColor = {0, 0, 0.2, 1};
   Vector3 position;
   QuaternionF rotation;
 };
@@ -38,6 +39,61 @@ struct ModelData {
   Vector3F scale;
   QuaternionF rotation;
 };
+
+struct Plane {
+  Vector3F normal;
+  float distance;
+};
+
+struct Frustrum {
+  Plane top;
+  Plane bottom;
+  Plane right;
+  Plane left;
+  Plane far;
+  Plane near;
+};
+
+/*
+Frustrum createFrustrum(const CameraData& cam, float aspect) {
+  Frustrum frustrum;
+  
+  const float halfVSide = cam.far * tanf(cam.fov * 0.5f * (M_PI / 180.f));
+  const float halfHSide * aspect;
+
+  const Vector3F forward = cam.rotation * Vector3F(0.f, 0.f, -1.f);
+  const Vector3F right = cam.rotation * Vector3F(1.f, 0.f, 0.f);
+  const Vector3F up = cam.rotation * Vector3F(0.f, 1.f, 0.f);
+
+  const Vector3F near = cam.position + forward * cam.near;
+  const Vector3F far = cam.position + forward * cam.far;
+
+  const Vector3F pos({0,0,0}); // remember to shift everything by -cam.position
+
+  frustrum.near = { forward, forward * near };
+  frustrum.far = { -forward, -forward * far };
+  
+  frustrum.right = {
+    (up.cross(far + right * halfHSide - pos)).normalize(),
+    frustrum.right.normal * pos
+  };
+  frustrum.left = {
+    (-up.cross(far + right * halfHSide - pos)).normalize(),
+    frustrum.left.normal * pos
+  };
+
+  frustrum.top = {
+    (right.cross(far + up * halfVSide - pos)).normalize(),
+    frustrum.top.normal * pos
+  };
+  frustrum.bottom = {
+    (-right.cross(far + up * halfVSide - pos)).normalize(),
+    frustrum.bottom.normal * pos
+  };
+
+  return frustrum;
+}
+*/
 
 struct SceneGraph {
   // goal is to have everything that is the same
@@ -72,12 +128,15 @@ struct SceneGraph {
   // Mesh has many Materials has many Matrix
   //std::unordered_map<Handle<Mesh>, std::unordered_map<Handle<Material>, std::vector<Matrix4x4F>> models;
 
-  void submitCamera(int id, int priority, float fov, bool doClear, Color clearColor, Vector3 position, QuaternionF rotation) {
+  void submitCamera(bool doClear, int id, int priority, float fov, float near, float far, Color clearColor, Vector3 position, QuaternionF rotation) {
     cameras[id] = CameraData{
+      doClear,
+      id,
+      priority,
       fov,
-      clearColor = {0, 0, 0.2, 1},
-      doClear = true,
-      priority = 0,
+      near,
+      far,
+      clearColor,
       position,
       rotation
     };
@@ -94,7 +153,7 @@ struct SceneGraph {
     models[std::pair(meshHandle, materialHandle)].push_back(ModelData{position, scale, rotation});
   }
 
-  void eachModel(Matrix4x4F frustrum, std::function<void(Handle<Mesh>, Handle<Material>, std::vector<ModelData>&)> f) {
+  void eachModel(Frustrum frustrum, std::function<void(Handle<Mesh>, Handle<Material>, std::vector<ModelData>&)> f) {
     for (auto& [key, modelData] : models) {
       auto& [meshHandle, materialHandle] = key;
       f(meshHandle, materialHandle, modelData);

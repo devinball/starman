@@ -10,7 +10,7 @@
 struct Material : Resource {
   using Resource::Resource;
 
-  std::string shaderId;
+  std::string shaderPath;
   
   std::unordered_map<std::string, float> floats;
   std::unordered_map<std::string, Vector4F> vectors;
@@ -34,10 +34,10 @@ struct Material : Resource {
     std::unordered_map<std::string, rfl::Variant<float, std::string, std::array<float, 4>>> properties;
   };
 
-  bool load() override {
-    auto result = rfl::yaml::read<Config>(readFile(getId())).value();
+  bool load(const std::string &path) {
+    auto result = rfl::yaml::read<Config>(readFile(path)).value();
 
-    shaderId = result.shader;
+    shaderPath = result.shader;
 
     for (const auto& prop : result.properties) {
       const auto& [key, value] = prop;
@@ -55,7 +55,7 @@ struct Material : Resource {
           set(key, Vector4F(v[0], v[1], v[2], v[3]));
         }
         else {
-          printf("Could not load type in material: %s\n", getId().c_str());
+          printf("Could not load type in material: %s\n", path.c_str());
         }
       };
 
@@ -65,7 +65,7 @@ struct Material : Resource {
     return true;
   }
 
-  bool unload() override {
+  bool unload() {
     floats.clear();
     vectors.clear();
     textures.clear();

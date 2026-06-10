@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/resource_pool.hpp"
+#include "core/resource_manager.hpp"
 #include "core/layers/layer.hpp"
 #include "core/math/matrix.hpp"
 #include "core/renderer.hpp"

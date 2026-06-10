@@ -2,7 +2,6 @@
 
 #include "core/math/vector.hpp"
 #include "core/resources/resource.hpp"
-#include "core/handle.hpp"
 #include "core/resources/shader.hpp"
 #include "core/resources/texture.hpp"
 

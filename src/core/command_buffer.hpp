@@ -3,7 +3,7 @@
 #include "core/math/matrix.hpp"
 #include "core/resources/mesh.hpp"
 #include "core/resources/material.hpp"
-#include "core/handle.hpp"
+#include "core/resource.hpp"
 
 struct DrawCommand {
   uint64_t key;

@@ -29,7 +29,7 @@ struct Application {
     context = std::make_shared<Context>(
       std::make_shared<SceneGraph>(),
       std::make_shared<SceneManager>(),
-      std::make_shared<ResourcePool>(),
+      std::make_shared<ResourceManager>(),
       std::make_shared<Registry>(),
       std::make_shared<OpenGLRenderer>(),
       std::make_shared<InputBuffer>()
@@ -37,7 +37,7 @@ struct Application {
 
     context->dt = 1 / physicsFrequency; // well it should be anyways
 
-    context->renderer->resourcePool = context->resourcePool;
+    context->renderer->resourceManager = context->resourceManager;
     context->renderer->sceneGraph = context->sceneGraph;
     context->renderer->inputBuffer = context->inputBuffer;
     context->renderer->init({800, 600, "engine", false, false});

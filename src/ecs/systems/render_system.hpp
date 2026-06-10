@@ -29,8 +29,9 @@ struct RenderSystem : System {
       meshRendererView.each([this](auto &meshRenderer, auto &spatial){
         // must have uniform non-negative scaling
         // in the future allowing non-uniform scaling would be a good idea
-        assert(spatial.scale.x == spatial.scale.y == spatial.scale.z);
-        assert(spatial.scale.x > 0);
+        //printf("%f %f %f \n", spatial.scale.x, spatial.scale.y, spatial.scale.z);
+        //assert(spatial.scale.x == spatial.scale.y == spatial.scale.z);
+        //assert(spatial.scale.x > 0);
 
         // right here we need to preform a floating origin such
         // that the camera is always the renderer's origin
@@ -51,7 +52,8 @@ struct RenderSystem : System {
       auto cameraView = context->registry->view<Camera, Spatial>();
       cameraView.each([this](auto &camera, auto &spatial){
         context->sceneGraph->submitCamera(
-          0, 0, 90.f, true,
+          true, 0, 0,
+          90.f, 0.1f, 1000.f,
           Color{0, 0, 0.2, 1.0},
           spatial.position,
           spatial.rotation

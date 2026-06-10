@@ -37,10 +37,9 @@ glm::mat4 createTransformMatrix(const Vector3F& position, const Vector3F& scale,
   return translationMatrix * rotationMatrix * scaleMatrix;
 }
 
-glm::mat4 createViewMatrix(const Vector3F& position, const QuaternionF& rotation) {
+glm::mat4 createViewMatrix(const QuaternionF& rotation) {
   glm::quat q(rotation.r, rotation.i, rotation.j, rotation.k);
   glm::mat4 cameraTransform = glm::mat4(1.0f);
-  cameraTransform = glm::translate(cameraTransform, glm::vec3(position.x, position.y, position.z));
   cameraTransform *= glm::mat4_cast(q);
 
   return glm::inverse(cameraTransform);
@@ -68,7 +67,7 @@ struct OpenGLRenderer : Renderer {
       inputBuffer->down = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT);
     }
 
-    uint maxInstances = 1000;
+    uint maxInstances = 50000;
 
     struct GPUMesh {
       uint VBO, VAO, EBO, numVerts, instanceVBO;
@@ -88,9 +87,9 @@ struct OpenGLRenderer : Renderer {
     };
 
     // handle id -> GPUMesh  TODO: i should really just write a hash for handle
-    std::unordered_map<std::string, GPUMesh> meshCache;
-    std::unordered_map<std::string, GPUTexture> textureCache;
-    std::unordered_map<std::string, GPUShader> shaderCache;
+    std::unordered_map<ResourceID, GPUMesh> meshCache;
+    std::unordered_map<ResourceID, GPUTexture> textureCache;
+    std::unordered_map<ResourceID, GPUShader> shaderCache;
 
     // shader cache
     // mesh cache
@@ -222,18 +221,21 @@ struct OpenGLRenderer : Renderer {
     }
 
     void bindShader(Handle<Shader> shaderHandle) {
-      if (shaderCache.count(shaderHandle.getId())) return;
-      Shader* shader = resourcePool->get(shaderHandle);
+      if (shaderCache.count(shaderHandle.id)) return;
+      //Handle<Shader> shaderHandle = resourceManager->load<Shader>(shaderId);
+      Shader* shader = resourceManager->get(shaderHandle);
 
       uint id = compileShaderProgram(shader->vertexSource.c_str(), shader->fragmentSource.c_str());
       uint aVpLoc = glGetUniformLocation(id, "aVp");
 
-      shaderCache[shaderHandle.getId()] = GPUShader{id, aVpLoc};
+      GPUShader gpuShader{id, aVpLoc};
+
+      shaderCache[shaderHandle.id] = gpuShader;
     }
 
     void bindTexture(Handle<Image> imageHandle) {
-      if (textureCache.count(imageHandle.getId())) return;
-      Image* image = resourcePool->get(imageHandle);
+      if (textureCache.count(imageHandle.id)) return;
+      Image* image = resourceManager->get(imageHandle);
       
       uint glTex;
       glGenTextures(1, &glTex);
@@ -249,12 +251,12 @@ struct OpenGLRenderer : Renderer {
 
       // TODO: stbi_image_free(data);
       
-      textureCache[imageHandle.getId()] = { glTex };
+      textureCache[imageHandle.id] = { glTex };
     }
 
     void bindMesh(Handle<Mesh> meshHandle) {
-      if (meshCache.count(meshHandle.getId())) return;
-      Mesh* mesh = resourcePool->get(meshHandle);
+      if (meshCache.count(meshHandle.id)) return;
+      Mesh* mesh = resourceManager->get(meshHandle);
 
       uint VAO, VBO, EBO;
 
@@ -295,7 +297,6 @@ struct OpenGLRenderer : Renderer {
       glGenBuffers(1, &instanceVBO);
 
       glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
-      glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * maxInstances, nullptr, GL_DYNAMIC_DRAW);
 
       for (int i = 0; i < 4; ++i) {
         glEnableVertexAttribArray(3 + i);
@@ -304,7 +305,7 @@ struct OpenGLRenderer : Renderer {
       }
 
       // TODO, make sure numVerts should actually be indices and not vertices size
-      meshCache[meshHandle.getId()] = GPUMesh{VBO, VAO, EBO, (uint)mesh->indices.size(), instanceVBO};
+      meshCache[meshHandle.id] = GPUMesh{VBO, VAO, EBO, (uint)mesh->indices.size(), instanceVBO};
 
       // TODO: if shader is the same as the previous one don't rebind
       // TODO: this should really be in render() with the check
@@ -314,54 +315,19 @@ struct OpenGLRenderer : Renderer {
     }
 
     void render() {
-      // const std::vector<DrawCommand> &commands
-      // before anything else, the render system
-      // and render layer need to construct
-      // the command buffer, which includes
-      // meshes, materials, shaders, lights
-      // gui elements
-      // if a bunch of models have the same mesh
-      // handle and material then they should
-      // automatically use instancing
-      // we look through all the commands first
-      // if there is anything not loaded we load it
-      // this include meshes, materials, images, etc
-      // then we compile shaders
-      // then we render the meshes, we batch things
-      // so that it is faster.
-      // then we do the defered lighting pass, where
-      // things like shadows are rendered.
-      // then we do post processing
-
       glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-      // V_clip = M_proj * M_view * M_model * V_local
-
-      // TODO: camera position should always be zero (or about zero)
-      // this should also let me make a couple subtle optimizations
-
-      // i need to essentially shift everything over by -cameraData.position
-      // hopefully should be simple? my other concern is floating point errors
-      // within a mesh, given an exceptionally large mesh (planet size), there
-      // will be floating point errors if i naively make a really big mesh.
-      // so, maybe i chunk it? or, and this may be stupid, i could move
-      // meshes closer to the camera, while scaling them down.
-      // but that's just what the camera's projection matricies do anyways!
-      // so what's the point then?, i suppose i may just have to begin testing
-      // things in order to determine the important of this issue
-
-      // speaking of optimizations i need to not delete the scene graph every
-      // frame, lots of data should be able to persist between frames
 
       sceneGraph->eachCamera([&](CameraData& cameraData){
         //Matrix4x4F a = transformMatrix(toVector3F(cameraData.position), cameraData.scale, cameraData.rotation);
         //toGlm(a);
-        glm::mat4 view = createViewMatrix(Vector3F((float)cameraData.position.x, (float)cameraData.position.y, (float)cameraData.position.z), cameraData.rotation);
-        glm::mat4 projection = createProjMatrix(90.f, (float)framebufferWidth/(float)framebufferHeight, 0.1f, 1000.f);
+        glm::mat4 view = createViewMatrix(cameraData.rotation);
+        glm::mat4 projection = createProjMatrix(cameraData.fov, (float)framebufferWidth/(float)framebufferHeight, cameraData.near, cameraData.far);
         glm::mat4 vp = projection * view;
 
-        sceneGraph->eachModel(identityMatrix4x4F(), [&](Handle<Mesh> meshHandle, Handle<Material> materialHandle, std::vector<ModelData>& modelDatas) {
+        Frustrum frustrum;
+
+        sceneGraph->eachModel(frustrum, [&](Handle<Mesh> meshHandle, Handle<Material> materialHandle, std::vector<ModelData>& modelDatas) {
           int numInstances = modelDatas.size();
 
           assert(numInstances <= maxInstances);
@@ -370,14 +336,14 @@ struct OpenGLRenderer : Renderer {
           // TODO: only bind if mesh needs to be changed
           // TODO: this should be good now, given the nature of how the scene graph works
           bindMesh(meshHandle);
-          GPUMesh& gpuMesh = meshCache[meshHandle.getId()];
+          GPUMesh& gpuMesh = meshCache[meshHandle.id];
 
-          Material* material = resourcePool->get(materialHandle);
-          //const std::string s = material->shaderId; // this may need to be optimized
-          Handle<Shader> shaderHandle = resourcePool->load<Shader>(material->shaderId);
+          Material* material = resourceManager->get(materialHandle);
+
+          Handle<Shader> shaderHandle = resourceManager->load<Shader>(material->shaderPath);
 
           bindShader(shaderHandle);
-          GPUShader& gpuShader = shaderCache[shaderHandle.getId()];
+          GPUShader& gpuShader = shaderCache[shaderHandle.id];
 
           glUseProgram(gpuShader.id);
           glUniformMatrix4fv(gpuShader.aVpLoc, 1, GL_FALSE, glm::value_ptr(vp));
@@ -393,10 +359,10 @@ struct OpenGLRenderer : Renderer {
 
           uint8_t slot = 0;
           for (auto& [key, value] : material->textures) {
-            Handle<Image> imageHandle = resourcePool->load<Image>(value);
+            Handle<Image> imageHandle = resourceManager->load<Image>(value);
             bindTexture(imageHandle);
 
-            GPUTexture& gpuTexture = textureCache[imageHandle.getId()];
+            GPUTexture& gpuTexture = textureCache[imageHandle.id];
 
             glActiveTexture(GL_TEXTURE0 + slot);
             glBindTexture(GL_TEXTURE_2D, gpuTexture.glTex);
@@ -408,12 +374,19 @@ struct OpenGLRenderer : Renderer {
           std::vector<glm::mat4> glmodels;
           for (int i = 0; i < numInstances; ++i) {
             ModelData modelData = modelDatas[i];
-            Vector3F relativePosition = {(float)modelData.position.x, (float)modelData.position.y, (float)modelData.position.z};
+            Vector3F relativePosition = {
+              float(modelData.position.x - cameraData.position.x),
+              float(modelData.position.y - cameraData.position.y),
+              float(modelData.position.z - cameraData.position.z)
+            };
             glmodels.push_back(createTransformMatrix(relativePosition, modelData.scale, modelData.rotation));
           }
 
+          //glBindBuffer(GL_ARRAY_BUFFER, gpuMesh.instanceVBO);
+          //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * numInstances, glmodels.data());
+
           glBindBuffer(GL_ARRAY_BUFFER, gpuMesh.instanceVBO);
-          glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(glm::mat4) * numInstances, glmodels.data());
+          glBufferData(GL_ARRAY_BUFFER, sizeof(glm::mat4) * numInstances, glmodels.data(), GL_DYNAMIC_DRAW);
           
           glBindVertexArray(gpuMesh.VAO);
 

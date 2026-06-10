@@ -46,6 +46,10 @@ struct QuaternionT {
         return *this * QuaternionT(0, b.x, b.y, b.z);
     }
 
+    QuaternionT operator*(const Vector3F &b) const {
+        return *this * QuaternionT(0, b.x, b.y, b.z);
+    }
+
     // Norm (magnitude)
     T norm() const {
         return std::sqrt(r * r + i * i + j * j + k * k);

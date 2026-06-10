@@ -8,7 +8,7 @@ namespace Raylib {
 #include "core/math/vector.hpp"
 #include "core/resources/mesh.hpp"
 #include "core/layers/render/renderer.hpp"
-#include "core/resource_pool.hpp"
+#include "core/resource_manager.hpp"
 
 #include <vector>
 #include <iostream>

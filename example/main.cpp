@@ -4,14 +4,14 @@
 #include "core/math/utilities.hpp"
 #include <chrono>
 
-
+/*
 void noAbstractionTest() {
   auto renderer = OpenGLRenderer{};
 
-  auto resourcePool = std::make_shared<ResourcePool>();
+  auto shaderPath = std::make_shared<ResourcePool>();
   auto sceneGraph = std::make_shared<SceneGraph>();
 
-  renderer.resourcePool = resourcePool;
+  renderer.shaderPath = resourcePool;
   renderer.sceneGraph = sceneGraph;
 
   renderer.init({800, 600, "engine"});
@@ -33,7 +33,8 @@ void noAbstractionTest() {
 
     // int id, int priority, float fov, bool doClear, Color clearColor, Vector3 position, Vector3F scale, QuaternionF rotation
     sceneGraph->submitCamera(
-      0, 0, 90.f, true,
+      true, 0, 0,
+      90.f, 0.1f, 1000.f,
       Color{0, 0, 0.2, 1.0},
       Vector3{0, 0, 0},
       eulerToQuaternion(0, 0, 0)
@@ -53,7 +54,7 @@ void noAbstractionTest() {
 
   renderer.shutdown();
 }
-
+*/
 
 int main()
 {

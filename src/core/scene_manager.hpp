@@ -51,20 +51,31 @@ struct SceneManager {
 
       // TODO: High numbers of meshes do not preform as well as i would like
 
+      Vector3 shift({1000000000, 1000000000, 1000000000});
+
       Entity camera = context->registry->create();
-      context->registry->emplace<Spatial>(camera, Vector3(0, 10, 0), Vector3F{1, 1, 1}, QuaternionF());
-      context->registry->emplace<Camera>(camera, 0, 90.0f, Color(0, 0, 0.2, 1), true, 0);
-      context->registry->emplace<CameraController>(camera, 50);
+      context->registry->emplace<Spatial>(camera, Vector3(0, 10, 0) + shift, Vector3F{1, 1, 1}, QuaternionF());
+      context->registry->emplace<Camera>(camera, true, 0, 0, 90.f, 1.f, 1000000.f, Color(0, 0, 0.2, 1));
+      context->registry->emplace<CameraController>(camera, 100);
 
       float d = 0.5;
 
       for (int i = 0; i < 1000; ++i) {
+        float s = 0.25 + randomF() * 3;
         Entity e = context->registry->create();
-        context->registry->emplace<Spatial>(e, Vector3(25 * (randomF() * 2 - 1), 25 * (randomF() * 2 - 1), 25 * (randomF() * 2 - 1)), Vector3F{1, 1, 1}, QuaternionF());
-        Handle<Mesh> mesh = context->resourcePool->load<Mesh>("example/models/simple_frog.obj");
-        Handle<Material> material = context->resourcePool->load<Material>("example/materials/fabric.yaml");
+        context->registry->emplace<Spatial>(e,
+          Vector3(25 * (randomF() * 2 - 1), 25 * (randomF() * 2 - 1), 25 * (randomF() * 2 - 1)) + shift,
+          Vector3F{s, s, s},// + (Vector3F{1, 1, 1} * 3 * randomF()),
+          eulerToQuaternion(randomF() * 360, randomF() * 360, randomF() * 360
+        ));
+        Handle<Mesh> mesh = context->resourceManager->load<Mesh>("example/models/simple_frog.obj");
+        Handle<Material> material = context->resourceManager->load<Material>("example/materials/fabric.yaml");
         context->registry->emplace<MeshRenderer>(e, mesh, material);
-        context->registry->emplace<Rigidbody>(e, 100, Vector3(randomF() * 2 - 1, randomF() * 2 - 1, randomF() * 2 - 1) * 10, QuaternionF());
+        context->registry->emplace<Rigidbody>(e,
+          100,
+          Vector3(randomF() * 2 - 1, randomF() * 2 - 1, randomF() * 2 - 1) * 10,
+          Vector3(randomF(), randomF(), randomF())
+        );
       }
 
       addSystem<RenderSystem>();
@@ -104,7 +115,7 @@ struct SceneManager {
 
     void loadScene(Handle<Scene> sceneHandle) {
       /*
-      Scene* scene = resourcePool->get(sceneHandle);
+      Scene* scene = resourceManager->get(sceneHandle);
       if (scene == nullptr) return;
 
       auto& entities = scene->getEntities();

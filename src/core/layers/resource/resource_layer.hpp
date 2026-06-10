@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/context.hpp"
-#include "core/resource_pool.hpp"
+#include "core/resource_manager.hpp"
 #include "core/layers/layer.hpp"
 
 #include <memory>

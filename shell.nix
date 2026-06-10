@@ -70,6 +70,7 @@ pkgs.mkShell {
     jq
     python3
     python313Packages.glad
+    renderdoc
   ];
 
   shellHook = ''

@@ -11,8 +11,8 @@ struct Rigidbody {
     float mass;
 
     Vector3 velocity; // Should not need high precision, highest value is c anyways
-    QuaternionF angularVelocity; // maybe should be vector3
-
+    Vector3 angularVelocity; // maybe should be vector3
+    Matrix3x3F momentInertia;
 //    Number timeStep; // does not always have to be fixed maybe?
 //    uint64_t lastPositionIndex; // index of the last position we reached
 //    Trajectory trajectory; // list of 4-vectors that represents an objects path through spacetime

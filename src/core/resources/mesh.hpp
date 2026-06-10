@@ -20,12 +20,12 @@ struct Mesh : Resource {
   std::vector<Vector4F> tangents;
   std::vector<uint32_t> indices;
 
-  bool load() override {
+  bool load(const std::string &path) {
     // can't load anything if the resource isn't valid
     if (!isValid()) { return false; }
 
     const struct aiScene* scene = aiImportFile(
-      getId().c_str(),
+      path.c_str(),
       aiProcess_CalcTangentSpace |
       aiProcess_Triangulate |
       aiProcess_JoinIdenticalVertices |
@@ -71,14 +71,14 @@ struct Mesh : Resource {
       }
     }
     
-    std::cout << "Loaded mesh: " << getId() << std::endl;
+    std::cout << "Loaded mesh: " << path << std::endl;
 
     aiReleaseImport(scene);
 
     return true;
   }
 
-  bool unload() override {
+  bool unload() {
     vertices.clear();
     normals.clear();
     uvs.clear();

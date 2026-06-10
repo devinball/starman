@@ -33,20 +33,18 @@ struct Image : Resource {
   WrapMode   wrapV   = WrapMode::Repeat;
   bool       genMips = true;
 
-  bool load() override {
-    data = stbi_load(getId().c_str(), &width, &height, &channels, 0);
+  bool load(const std::string &path) {
+    data = stbi_load(path.c_str(), &width, &height, &channels, 0);
 
     if (data) {
-      printf("Loaded Image: %s\n", getId().c_str());
+      printf("Loaded Image: %s\n", path.c_str());
       return true;
     }
-
-    printf("uhoh a: %s\n", getId().c_str());
     
     return false;
   }
 
-  bool unload() override {
+  bool unload() {
     stbi_image_free(data);
     return true;
   }
