@@ -6,6 +6,7 @@
 #include "core/rendering/opengl/opengl_renderer.hpp"
 #include "core/scene_manager.hpp"
 #include "core/input_buffer.hpp"
+#include "core/gui_manager.hpp"
 
 #include <memory>
 #include <chrono>
@@ -20,6 +21,8 @@ struct Application {
   // application will by default add a bunch of layers
   // to the stack-> maybe in future this can be disabled
   // via build flags.
+
+  GUIManager guiManager;
 
   void run() {
     // some of these, especially the renderer may need to
@@ -45,6 +48,8 @@ struct Application {
     context->sceneManager->context = context; // this feels wrong...
     context->sceneManager->init();
 
+    guiManager.init();
+
     float accumulator = 0;
     auto startTime = std::chrono::high_resolution_clock::now();
     auto previous = std::chrono::high_resolution_clock::now();
@@ -67,6 +72,8 @@ struct Application {
       context->renderer->beginFrame();
       context->renderer->render();
       context->renderer->endFrame();
+
+      guiManager.render();
 
       // reuse now from physics loop calculation for begin frame time
       elapsed = std::chrono::high_resolution_clock::now() - now;

@@ -1,6 +1,6 @@
 shader: "example/shaders/tex.glsl"
 filterMode: "linear"
 properties:
-  tex: "example/textures/checker.png"
-  ambient: 0.05
-  scale: 10
+  tex: "example/textures/neptune.jpg"
+  ambient: 0.5
+  scale: 1

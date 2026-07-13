@@ -14,6 +14,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>    
 
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 
 glm::mat4 toGlm(Matrix4x4F& mat) {
   return glm::make_mat4(mat.getData().data());
@@ -28,7 +31,7 @@ glm::mat4 createProjMatrix(float fov, float aspectRatio, float near, float far) 
   return glm::perspective(glm::radians(fov), aspectRatio, near, far);
 }
 
-glm::mat4 createTransformMatrix(const Vector3F& position, const Vector3F& scale, const QuaternionF& rotation) {
+glm::mat4 createTransformMatrix(const Vector3D& position, const Vector3F& scale, const QuaternionF& rotation) {
   glm::quat q(rotation.r, rotation.i, rotation.j, rotation.k);
   glm::mat4 rotationMatrix = glm::mat4_cast(q);
   glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(scale.x, scale.y, scale.z));
@@ -65,6 +68,10 @@ struct OpenGLRenderer : Renderer {
       inputBuffer->right = glfwGetKey(window, GLFW_KEY_D);
       inputBuffer->up = glfwGetKey(window, GLFW_KEY_SPACE);
       inputBuffer->down = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT);
+
+      if(glfwGetKey(window, GLFW_KEY_ENTER)) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+      }
     }
 
     uint maxInstances = 50000;
@@ -142,6 +149,7 @@ struct OpenGLRenderer : Renderer {
 
       glEnable(GL_DEPTH_TEST);
       glEnable(GL_CULL_FACE);
+      glEnable(GL_DEPTH_CLAMP);
       glCullFace(GL_BACK);
       glFrontFace(GL_CCW);
 
@@ -166,14 +174,28 @@ struct OpenGLRenderer : Renderer {
         renderer->lastY = ypos;
       });
 
-      printf("Completed Setup\n");
+      glfwSetScrollCallback(window, [](GLFWwindow* window, double xoffset, double yoffset) {
+        auto renderer = static_cast<OpenGLRenderer*>(glfwGetWindowUserPointer(window));
+        
+        renderer->inputBuffer->scroll = yoffset;
+      });
+
+      printf("Completed GLFW + OpenGL Setup\n");
+
+      IMGUI_CHECKVERSION();
+      ImGui::CreateContext();
+      //ImGuiIO& io = ImGui::GetIO();
+      //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+      //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+      //io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+      ImGui_ImplGlfw_InitForOpenGL(window, true);
+      ImGui_ImplOpenGL3_Init();
+
+      printf("Completed ImGUI Setup\n");
     }
 
     double lastX, lastY;
-
-    void beginFrame() {
-      processInput();
-    }
 
     uint compileShaderProgram(const char* vertex, const char* fragment) {
       uint vertexShader, fragmentShader, shaderProgram;
@@ -314,11 +336,33 @@ struct OpenGLRenderer : Renderer {
       //printf("Loaded mesh to gpu\n");
     }
 
+    void beginFrame() {
+      processInput();
+
+      ImGui_ImplOpenGL3_NewFrame();
+      ImGui_ImplGlfw_NewFrame();
+      ImGui::NewFrame();
+    }
+
     void render() {
-      glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+      // TODO: skybox
+      /*
+      Handle<Image> cubemapHandle = resourceManager->load<Image>("example/textures/sky.jpg");
+      bindTexture(cubemapHandle);
+
+      GPUTexture& gpuTexture = textureCache[cubemapHandle.id];
+
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+      */
 
       sceneGraph->eachCamera([&](CameraData& cameraData){
+        glClearColor(cameraData.clearColor.x, cameraData.clearColor.y, cameraData.clearColor.z, cameraData.clearColor.w);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
         //Matrix4x4F a = transformMatrix(toVector3F(cameraData.position), cameraData.scale, cameraData.rotation);
         //toGlm(a);
         glm::mat4 view = createViewMatrix(cameraData.rotation);
@@ -374,10 +418,10 @@ struct OpenGLRenderer : Renderer {
           std::vector<glm::mat4> glmodels;
           for (int i = 0; i < numInstances; ++i) {
             ModelData modelData = modelDatas[i];
-            Vector3F relativePosition = {
-              float(modelData.position.x - cameraData.position.x),
-              float(modelData.position.y - cameraData.position.y),
-              float(modelData.position.z - cameraData.position.z)
+            Vector3D relativePosition = {
+              double(modelData.position.x - cameraData.position.x),
+              double(modelData.position.y - cameraData.position.y),
+              double(modelData.position.z - cameraData.position.z)
             };
             glmodels.push_back(createTransformMatrix(relativePosition, modelData.scale, modelData.rotation));
           }
@@ -393,9 +437,16 @@ struct OpenGLRenderer : Renderer {
           glDrawElementsInstanced(GL_TRIANGLES, gpuMesh.numVerts, GL_UNSIGNED_INT, (void*)0, numInstances);
         });
       });
+
+      ImGui::Begin("hello");
+      ImGui::Text("this is text");
+      ImGui::End();
     }
 
-    void endFrame() {
+    void endFrame() {     
+      ImGui::Render();
+      ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
       glfwSwapBuffers(window);
     }
 
@@ -407,7 +458,11 @@ struct OpenGLRenderer : Renderer {
 
       for (auto& [id, gpuShader] : shaderCache) {
         glDeleteProgram(gpuShader.id);
-      } 
+      }
+
+      ImGui_ImplOpenGL3_Shutdown();
+      ImGui_ImplGlfw_Shutdown();
+      ImGui::DestroyContext();
 
       glfwTerminate();
     }

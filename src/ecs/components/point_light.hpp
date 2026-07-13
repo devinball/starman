@@ -2,7 +2,7 @@
 
 // requires Spatial, position defined by the spatial
 struct PointLight {
-  float intensity; // w/m^2
-  float range; // m
+  double intensity; // w/m^2
+  double range; // m
   Color color;
 };

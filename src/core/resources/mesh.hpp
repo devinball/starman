@@ -78,6 +78,11 @@ struct Mesh : Resource {
     return true;
   }
 
+  bool load(float radius, int vertical, int horizontal) {
+    // implement this
+    return true;
+  }
+
   bool unload() {
     vertices.clear();
     normals.clear();

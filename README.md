@@ -15,28 +15,34 @@ maybe one layer could just handle timing and loops, it would call a special on u
 
 # TODO:
 
-## Cameras
-### multiple cameras support
-### physics -> rendering space transform
-### camera movement
+## Rendering
+- Actual Lighting
+- Normal Mapping
+- Skybox
+- Single Planet
+      - Large scale object rendering
+      - Atmosphere
+- Fix floating point errors for large relative positions
 
-## Star System
-### Single Planet
-### texture loading
+## Physics
+- Gravity
+      - Fixed orbits (Keplerian)
+      - N-body orbits (Newtonian with Symplectic integrator)
+- Collisions
+      - simple proximity based
 
-## Moving ship
-### texture loading
-### input
-### movable camera
-### gravity
+## UI
+- IMGUI integration
+- Trajectories
 
-## gravity
-### kepler orbits
-### newton orbits
+# for now, just focus on trying to get a basic orbit sim, with keplerian planets + newtonian orbiter
+- just make the orbiter large, or have a ui element (how?), so you can see it
+- then work on trajectories
 
 # when resource loading fails (shader, texture, material), substitute with a default
 
 ## Bugs
+
 
 
 ## Log
@@ -44,12 +50,13 @@ maybe one layer could just handle timing and loops, it would call a special on u
 5/5/26 - Nvidia: 0.5 ms Intel: 5.3 ms
 
 
-
-
-
-
-
 # Notes
+maybe for rendering i can habve multipl ernder targets
+0 - screen output
+1 - normal
+2 - depth
+3...N - for anything yiu want 
+
 
       // for each body we need to compute it's trajectory
       // to do this we need to find all conservative forces

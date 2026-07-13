@@ -52,9 +52,9 @@ struct RenderSystem : System {
       auto cameraView = context->registry->view<Camera, Spatial>();
       cameraView.each([this](auto &camera, auto &spatial){
         context->sceneGraph->submitCamera(
-          true, 0, 0,
-          90.f, 0.1f, 1000.f,
-          Color{0, 0, 0.2, 1.0},
+          true, camera.id, camera.priority,
+          camera.fov, camera.near, camera.far,
+          camera.clearColor,
           spatial.position,
           spatial.rotation
         );

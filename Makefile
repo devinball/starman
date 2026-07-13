@@ -1,3 +1,6 @@
+#SHELL := /bin/sh
+#export PATH := $(shell nix-shell shell.nix)
+
 run:
 	cmake -B build -DCMAKE_BUILD_TYPE=Debug # > build.log
 	cmake --build build # >> build.log 2>&1
@@ -33,3 +36,6 @@ gfx-test:
 doc:
 	qrenderdoc &
 	renderdoccmd capture -d . build/example
+
+clean:
+	rm -r build/

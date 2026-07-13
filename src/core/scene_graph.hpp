@@ -28,7 +28,7 @@ struct CameraData {
   int priority = 0;
   float fov = 90.f;
   float near = 1.f;
-  float far = 1000.f;
+  float far = 10000.f;
   Color clearColor = {0, 0, 0.2, 1};
   Vector3 position;
   QuaternionF rotation;

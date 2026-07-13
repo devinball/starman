@@ -62,6 +62,8 @@ struct Material : Resource {
       value.visit(visitor);
     }
 
+    printf("Loaded material: %s\n", path.c_str());
+
     return true;
   }
 

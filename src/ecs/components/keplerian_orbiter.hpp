@@ -1,11 +1,22 @@
+#pragma once
+
 #include "core/math/vector.hpp"
 
 struct KeplerianOrbiter {
-  float apoapsis;
-  float periapsis;
-  float eccentricity;
-  float semiMajorAxis;
-  float semiMinorAxis;
-  float semiParameter;
+  double apoapsis;
+  double periapsis;
+  double eccentricity;
+  double semiMajorAxis;
+  double semiMinorAxis;
+  double semiParameter;
+
+  double inclination;
+  double longAscendingNode;
+  double argumentPeriapsis;
+  double longPeriapsis;
+
+  double meanMotion;
+  double orbitalPeriod;
+
   Vector3 barycenter;
 };

@@ -23,7 +23,7 @@ struct InputBuffer {
     double dx;
     double dy;
 
-
+    double scroll;
 
     std::vector<InputEvent> getEvents() const { return events; }
 };

@@ -1,35 +1,23 @@
 cmake_minimum_required(VERSION 3.27)
 project(engine VERSION 0.1.0 LANGUAGES CXX)
 
-# =============================================================================
-# Global compiler setup
-# =============================================================================
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# =============================================================================
-# CPM.cmake – package manager
-# =============================================================================
 set(CPM_DOWNLOAD_VERSION 0.38.2)
-
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
     file(DOWNLOAD
         https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_DOWNLOAD_VERSION}/CPM.cmake
         ${CMAKE_BINARY_DIR}/cmake/CPM.cmake)
 endif()
-
 include(${CMAKE_BINARY_DIR}/cmake/CPM.cmake)
 
-# =============================================================================
-# Python interpreter (required for GLAD code generation)
-# =============================================================================
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+find_package(glfw3 REQUIRED)
 
-# =============================================================================
-# GLAD – OpenGL loader generation
-# =============================================================================
+# --- GLAD (OpenGL 3.3 core loader, generated at configure time) ---
 set(GLAD_ROOT        "${CMAKE_CURRENT_BINARY_DIR}/glad")
 set(GLAD_INCLUDE_DIR "${GLAD_ROOT}/include")
 set(GLAD_SRC_DIR     "${GLAD_ROOT}/src")
@@ -59,9 +47,7 @@ add_library(glad INTERFACE)
 target_include_directories(glad INTERFACE "${GLAD_INCLUDE_DIR}")
 add_dependencies(glad glad_generate)
 
-# =============================================================================
-# External dependencies (via CPM)
-# =============================================================================
+# --- Dependencies ---
 CPMAddPackage(
     NAME Boost
     URL "https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-cmake.tar.gz"
@@ -84,10 +70,9 @@ CPMAddPackage(
         "ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF")
 
 CPMAddPackage(
-  NAME yaml-cpp
-  GITHUB_REPOSITORY jbeder/yaml-cpp
-  GIT_TAG yaml-cpp-0.9.0
-)
+    NAME yaml-cpp
+    GITHUB_REPOSITORY jbeder/yaml-cpp
+    GIT_TAG yaml-cpp-0.9.0)
 
 CPMAddPackage(
     NAME stb
@@ -100,17 +85,36 @@ if(stb_ADDED)
     target_include_directories(stb INTERFACE "${stb_SOURCE_DIR}")
 endif()
 
+# Must be set before CPMAddPackage(reflectcpp) to actually take effect
+set(REFLECTCPP_YAML ON)
 CPMAddPackage(
     NAME reflectcpp
     GITHUB_REPOSITORY getml/reflect-cpp
-    GIT_TAG v0.25.0
-)
+    GIT_TAG v0.25.0)
 
-set(REFLECTCPP_YAML ON)
+CPMAddPackage(
+    NAME imgui
+    GITHUB_REPOSITORY ocornut/imgui
+    GIT_TAG v1.92.8)
 
-# =============================================================================
-# Engine library sources
-# =============================================================================
+add_library(imgui_lib STATIC
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp)
+target_include_directories(imgui_lib PUBLIC ${imgui_SOURCE_DIR})
+target_compile_features(imgui_lib PUBLIC cxx_std_23)
+
+add_library(imgui_backend STATIC
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
+target_include_directories(imgui_backend PUBLIC ${imgui_SOURCE_DIR})
+target_link_libraries(imgui_backend PUBLIC imgui_lib glfw)
+
+add_library(imgui ALIAS imgui_backend)
+
+# --- Engine library ---
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/engine/src/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine/src/**/*.cpp")
@@ -120,25 +124,13 @@ if(NOT ENGINE_SOURCES)
     file(WRITE "${CMAKE_BINARY_DIR}/empty.cpp" "// placeholder\n")
 endif()
 
-# =============================================================================
-# Engine static library
-# =============================================================================
 add_library(engine STATIC ${ENGINE_SOURCES})
-
 target_compile_features(engine PUBLIC cxx_std_23)
-
-target_include_directories(engine PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_include_directories(engine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 target_sources(engine PRIVATE "${GLAD_SRC_DIR}/glad.c")
-
-# Compile glad.c as C++ to avoid C compiler issues in Nix
 set_source_files_properties("${GLAD_SRC_DIR}/glad.c" PROPERTIES LANGUAGE CXX)
-
-# Ensure GLAD is generated before engine compilation
 add_dependencies(engine glad_generate)
-
-find_package(glfw3 REQUIRED)
 
 target_link_libraries(engine PUBLIC
     glad
@@ -149,17 +141,13 @@ target_link_libraries(engine PUBLIC
     yaml-cpp
     assimp
     stb
-)
+    imgui)
 
-# =============================================================================
-# Example executable
-# =============================================================================
+# --- Example executable ---
 add_executable(example example/main.cpp)
 target_link_libraries(example PRIVATE engine)
 
-# =============================================================================
-# Developer convenience: copy compile_commands.json to project root
-# =============================================================================
+# --- Copy compile_commands.json to project root for editor tooling ---
 add_custom_target(copy_compile_commands ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_BINARY_DIR}/compile_commands.json"

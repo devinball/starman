@@ -14,6 +14,7 @@ Matrix4x4F identityMatrix4x4F() {
   });
 }
 
+// degrees to radians
 float radians(float x) {
   return x * (3.14159265 / 180);
 }

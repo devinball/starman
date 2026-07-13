@@ -28,10 +28,11 @@ in vec2 vUv;
 out vec4 fragColor;
 
 uniform float ambient;
+uniform float scale;
 uniform sampler2D tex;
 
 void main() {
-  vec4 albedo = texture(tex, 10 * vUv);
+  vec4 albedo = texture(tex, scale * vUv);
   vec3  L       = normalize(vec3(0.6, 1.0, 0.4));
   float diffuse = max(dot(normalize(vNormal), L), 0.0);
   float light   = ambient + (1 - ambient) * diffuse;

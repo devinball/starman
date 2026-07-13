@@ -223,4 +223,29 @@ inline FixedPoint<F> operator/(int a, const FixedPoint<F>& b) {
     return FixedPoint<F>(a) / b; 
 }
 
+// --- LLM WRITTEN --- 
+template <int F>
+FixedPoint<F> sqrt(FixedPoint<F> x) {
+    if (x.value <= 0) {
+        throw std::runtime_error("Expected positive value for sqrt");
+    }
+
+    int64_t guess = x.value;
+
+    int bits = 64 - __builtin_clzll(x.value);
+    guess = 1LL << ((bits + F) / 2);
+
+    for (int i = 0; i < 8; ++i) {
+        int64_t next = (guess + ((__int128)x.value << F) / guess) >> 1;
+
+        if (next >= guess) break;
+
+        guess = next;
+    }
+
+    FixedPoint<F> result;
+    result.value = guess;
+    return result;
+}
+
 using Number = FixedPoint<16>;

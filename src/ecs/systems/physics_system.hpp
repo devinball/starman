@@ -7,73 +7,48 @@
 #include "ecs/components/rigidbody.hpp"
 #include "ecs/components/spatial.hpp"
 
+#include "core/math/utilities.hpp"
+
+#include <math.h>
+
 struct PhysicsSystem : System {
-  private:
-    Number currentTime;
+  void init() {
+  }
 
-  public:
-    void init() {
+  void update() {
+    auto view = context->registry->view<Rigidbody, Spatial>();
+
+    float s = context->runtime * 10;
+
+    for (auto [entity, rigidbody, spatial] : view.each()) {
+      spatial.rotation = eulerToQuaternion(s, s, 15);
     }
 
-    void update() {
-      auto view = context->registry->view<Rigidbody, Spatial>();
+    /*
+    for (auto [entity, rigidbody, spatial] : view.each()) {
+      Vector3 acceleration;
 
-      view.each([this](auto &rigidbody, auto &spatial){
-        // TODO: collision check
-        // TODO: might need to use proper time instead of coordinate time
-        spatial.position = spatial.position + rigidbody.velocity * context->dt;
+      float width = (spatial.scale.x) * (spatial.scale.x) * 0.5;
 
-        //spatial.rotation = eulerToQuat(context->runtime, context->runtime, context->runtime);
-      });
-
-      /*
-      view.each([this](auto &rigidbody, auto &spatial){
-        // calculate trajectory, always at least enough for
-        // this frame.
-
-        int iterations = 100;
-
-        float delta = 1/100;
-        for (int step = 0; step < iterations; ++step) {
-          Vector3 force = {0, 0, 0};
-
-          Vector4 last = rigidbody.trajectory.end();
-          // integrate forces
-          rigidbody.trajectory.push_bacK(Vector4(
-            last.x + force * delta,
-            last.y + force * delta,
-            last.z + force * delta,
-            last.t + step * delta));
+      for (auto [e2, r2, s2] : view.each()) {
+        Vector3 dr = spatial.position - s2.position;
+        Number d = (dr.x * dr.x + dr.y * dr.y + dr.z * dr.z);
+        
+        if ((float)d > width) {
+          acceleration = acceleration + (dr.normalized() * -1 * r2.mass) / d;
         }
+        else if ((float)d > 0.01f) {
+          rigidbody.mass += r2.mass;
+          float s = std::cbrt(rigidbody.mass) * 0.2;
+          spatial.scale = Vector3F(s, s, s);
+          context->registry->destroy(e2);
+          printf("New mass: %f\n", rigidbody.mass);
+        }
+      }
 
-        // then move object along trajectory, use either lerp
-        // or polynomial fit
-
-        auto p0 = rigidbody.trajectory[lastPositionIndex];
-        auto p1 = rigidbody.trajectory[lastPositionIndex + 1];
-
-        float t = 0.5; // should be set from weighted average between p0.w and p1.w
-
-        float delta = p1.w - p0.w;
-
-        // just keep track of the index we last reached
-        // then lerp between n and n+1 based on n[time] and (n+1)[time]
-        spatial.position = Vector3(lerp(p0.x, p1.x, t), lerp(p0.y, p1.y, t), lerp(p0.z, p1.z, t));
-
-        rigidbody.velocity = Vector3(p0.x - p1.x, p0.y - p1.y, p0.z - p1.z) / (p1.w - p0.w);
-      });
-
-      /*
-      view.each([](auto &rigidbody, auto &spatial) {
-        Vector3 force = {0, 0, 0};
-        view.each([](auto &rigidbody2, auto &spatial2) {
-          force += calculateGravitationalForce(rigidbody2.mass, spatial.position, spatial2.position);
-        });
-        // f = G m_1 * m_2 / r^2
-        // a = f/m
-        // a = G * m_2 / r^2
-        rigidbody.velocity += force / dt;
-      });
-      */
+      rigidbody.velocity = rigidbody.velocity + acceleration * context->dt;
+      spatial.position = spatial.position + rigidbody.velocity * context->dt;
     }
+      */
+  }
 };

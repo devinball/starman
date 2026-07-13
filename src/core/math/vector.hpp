@@ -133,6 +133,10 @@ using Vector2F = Vector2T<float>;
 using Vector3F = Vector3T<float>;
 using Vector4F = Vector4T<float>;
 
+using Vector2D = Vector2T<double>;
+using Vector3D = Vector3T<double>;
+using Vector4D = Vector4T<double>;
+
 using Vector2I = Vector2T<int>;
 using Vector3I = Vector3T<int>;
 using Vector4I = Vector4T<int>;
