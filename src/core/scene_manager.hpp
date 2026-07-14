@@ -59,7 +59,7 @@ struct SceneManager {
     void createLight() {
       Entity entity = context->registry->create();
       context->registry->emplace<Spatial>(entity, Vector3{0, 0, 0}, Vector3F{0, 0, 0}, QuaternionF());
-      context->registry->emplace<PointLight>(entity, 3.86e4, 2e6, Color(0.99,0.9,0.44,0));
+      context->registry->emplace<PointLight>(entity, 3.86e26, 2e24, Color(0.99,0.9,0.44,0));
 
       // p = 3.86e24
       // r = 200e24

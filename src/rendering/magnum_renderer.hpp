@@ -105,7 +105,7 @@ struct MagnumRenderer : Renderer {
 
   }
 
-  virtual void submitCamera(bool doClear, int id, int priority, float fov, float near, float far, Color clearColor, Vector3 position, QuaternionF rotation) {}
-  virtual void submitModel(Handle<Mesh> meshHandle, Handle<Material> materialHandle, Vector3 position, Vector3F scale, QuaternionF rotation) {}
-  virtual void submitPointLight(float intensity, float range, Vector3 pos, Color color) {}
+  void submitCamera(bool doClear, int id, int priority, float fov, float near, float far, Color clearColor, Vector3 position, QuaternionF rotation) {}
+  void submitModel(Handle<Mesh> meshHandle, Handle<Material> materialHandle, Vector3 position, Vector3F scale, QuaternionF rotation) {}
+  void submitPointLight(float intensity, float range, Vector3 pos, Color color) {}
 };

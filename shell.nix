@@ -64,7 +64,7 @@ pkgs.mkShell {
     entt
     yaml-cpp
     stb
-    imgui
+    #imgui
     boost
 
     # ---- Nix dev tooling ----

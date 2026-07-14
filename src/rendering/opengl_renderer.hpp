@@ -379,7 +379,7 @@ struct OpenGLRenderer : Renderer {
       */
 
       sceneGraph->eachCamera([&](CameraData& cameraData) {
-        glClearColor(cameraData.clearColor.x, cameraData.clearColor.y, cameraData.clearColor.z, cameraData.clearColor.w);
+        glClearColor(cameraData.clearColor.r, cameraData.clearColor.g, cameraData.clearColor.b, cameraData.clearColor.a);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
         //Matrix4x4F a = transformMatrix(toVector3F(cameraData.position), cameraData.scale, cameraData.rotation);
@@ -400,9 +400,9 @@ struct OpenGLRenderer : Renderer {
             pointLight.intensity
           };
           Vector4F v2 = {
-            pointLight.color.x,
-            pointLight.color.y,
-            pointLight.color.z,
+            pointLight.color.r,
+            pointLight.color.g,
+            pointLight.color.b,
             pointLight.range
           };
           GPULight light = { v1, v2 };
@@ -524,4 +524,8 @@ struct OpenGLRenderer : Renderer {
     }
 
     void setRenderMode(RenderMode renderMode) {};
+
+    void submitCamera(bool doClear, int id, int priority, float fov, float near, float far, Color clearColor, Vector3 position, QuaternionF rotation) {}
+    void submitModel(Handle<Mesh> meshHandle, Handle<Material> materialHandle, Vector3 position, Vector3F scale, QuaternionF rotation) {}
+    void submitPointLight(float intensity, float range, Vector3 pos, Color color) {}
 };

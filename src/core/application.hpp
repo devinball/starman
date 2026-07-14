@@ -2,8 +2,7 @@
 
 #include "core/context.hpp"
 #include "ecs/ecs.hpp"
-//#include "rendering/opengl_renderer.hpp"
-#include "rendering/magnum_renderer.hpp"
+#include "rendering/opengl_renderer.hpp"
 #include "core/scene_manager.hpp"
 #include "core/input_buffer.hpp"
 
@@ -21,7 +20,7 @@ struct Application {
       std::make_shared<SceneManager>(),
       std::make_shared<ResourceManager>(),
       std::make_shared<Registry>(),
-      std::make_shared<MagnumRenderer>(),
+      std::make_shared<OpenGLRenderer>(),
       std::make_shared<InputBuffer>()
     );
 
