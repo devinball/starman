@@ -10,7 +10,7 @@
 #include <Magnum/Math/Color.h>
 #include <Magnum/Math/Vector2.h>
 #include <Magnum/Platform/GLContext.h>
-#include <Magnum/Shaders/VertexColorGL.h>
+#include <Magnum/Shaders/VertexColor.h>
 
 #include <GLFW/glfw3.h>
 
@@ -19,7 +19,7 @@ struct MagnumRenderer : Renderer {
 
   Corrade::Containers::Optional<Magnum::Platform::GLContext> _context;
   Corrade::Containers::Optional<Magnum::GL::Mesh> _mesh;
-  Corrade::Containers::Optional<Magnum::Shaders::VertexColorGL2D> _shader;
+  Corrade::Containers::Optional<Magnum::Shaders::VertexColor2D> _shader;
 
 
   void init(const WindowSettings settings) {
@@ -71,8 +71,8 @@ struct MagnumRenderer : Renderer {
     _mesh.emplace();
     _mesh->setCount(3)
           .addVertexBuffer(std::move(buffer), 0,
-              Magnum::Shaders::VertexColorGL2D::Position{},
-              Magnum::Shaders::VertexColorGL2D::Color3{});
+              Magnum::Shaders::VertexColor2D::Position{},
+              Magnum::Shaders::VertexColor2D::Color3{});
  
     _shader.emplace();
   }
@@ -104,4 +104,8 @@ struct MagnumRenderer : Renderer {
   void setRenderMode(RenderMode renderMode) {
 
   }
+
+  virtual void submitCamera(bool doClear, int id, int priority, float fov, float near, float far, Color clearColor, Vector3 position, QuaternionF rotation) {}
+  virtual void submitModel(Handle<Mesh> meshHandle, Handle<Material> materialHandle, Vector3 position, Vector3F scale, QuaternionF rotation) {}
+  virtual void submitPointLight(float intensity, float range, Vector3 pos, Color color) {}
 };
