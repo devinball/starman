@@ -1,4 +1,4 @@
-#include "core/math/color.hpp"
+#include "math/color.hpp"
 
 // requires Spatial, direction defined by rotation
 struct DirectionalLight {

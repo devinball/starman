@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/math/vector.hpp"
-#include "core/resources/resource.hpp"
-#include "core/resources/shader.hpp"
-#include "core/resources/texture.hpp"
+#include "math/vector.hpp"
+#include "resources/resource.hpp"
+#include "resources/shader.hpp"
+#include "resources/texture.hpp"
 
 #include <vector>
 

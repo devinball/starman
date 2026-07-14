@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/resources/resource.hpp"
+#include "resources/resource.hpp"
 
 #include <map>
 #include <string>

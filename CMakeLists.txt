@@ -6,6 +6,63 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Corrade/Magnum (v2020.06) predate CMake's modern policy minimums.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
+find_package(PkgConfig REQUIRED)
+
+# ---------------------------------------------------------------------
+# Nix-provided dependencies
+#
+# These are expected to be in your shell.nix / flake.nix buildInputs.
+# Nix's cmake setup hook adds each package's store path to
+# CMAKE_PREFIX_PATH automatically, so find_package should resolve them
+# as long as this is configured from inside nix-shell / nix develop.
+# ---------------------------------------------------------------------
+
+find_package(glfw3 REQUIRED)
+find_package(glm REQUIRED)
+find_package(GLEW REQUIRED)
+
+find_package(entt CONFIG QUIET)
+if(NOT entt_FOUND)
+    pkg_check_modules(entt REQUIRED IMPORTED_TARGET entt)
+    add_library(entt::entt ALIAS PkgConfig::entt)
+endif()
+
+find_package(yaml-cpp CONFIG QUIET)
+if(NOT yaml-cpp_FOUND)
+    pkg_check_modules(yaml-cpp REQUIRED IMPORTED_TARGET yaml-cpp)
+    add_library(yaml-cpp::yaml-cpp ALIAS PkgConfig::yaml-cpp)
+endif()
+
+find_package(assimp CONFIG QUIET)
+if(NOT assimp_FOUND)
+    pkg_check_modules(ASSIMP REQUIRED IMPORTED_TARGET assimp)
+    add_library(assimp::assimp ALIAS PkgConfig::ASSIMP)
+endif()
+
+# imgui: nixpkgs' imgui derivation only bundles the backends it was
+# built with. You need to have overridden it to include glfw+opengl3,
+# e.g. in your nix expression:
+#   imgui.override { targets = [ "opengl3" ]; platforms = [ "glfw" ]; }
+# Without that override, this find_package call succeeds but the
+# imgui_impl_glfw.h / imgui_impl_opengl3.h backend headers won't exist.
+find_package(imgui REQUIRED)
+
+# stb: nixpkgs' stb package ships headers only, with no CMake config
+# file — so it's located manually rather than via find_package.
+find_path(STB_INCLUDE_DIR stb_image.h)
+if(NOT STB_INCLUDE_DIR)
+    message(FATAL_ERROR "stb headers not found — check that 'stb' is in your Nix buildInputs")
+endif()
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE "${STB_INCLUDE_DIR}")
+
+# ---------------------------------------------------------------------
+# CPM-fetched dependencies (not provided by Nix)
+# ---------------------------------------------------------------------
+
 set(CPM_DOWNLOAD_VERSION 0.38.2)
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
     file(DOWNLOAD
@@ -14,77 +71,6 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/cmake/CPM.cmake")
 endif()
 include(${CMAKE_BINARY_DIR}/cmake/CPM.cmake)
 
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
-find_package(glfw3 REQUIRED)
-
-# --- GLAD (OpenGL 3.3 core loader, generated at configure time) ---
-set(GLAD_ROOT        "${CMAKE_CURRENT_BINARY_DIR}/glad")
-set(GLAD_INCLUDE_DIR "${GLAD_ROOT}/include")
-set(GLAD_SRC_DIR     "${GLAD_ROOT}/src")
-
-add_custom_command(
-    OUTPUT
-        "${GLAD_INCLUDE_DIR}/glad/glad.h"
-        "${GLAD_INCLUDE_DIR}/KHR/khrplatform.h"
-        "${GLAD_SRC_DIR}/glad.c"
-    COMMAND
-        ${Python3_EXECUTABLE} -m glad
-            --api gl=3.3
-            --profile core
-            --spec gl
-            --generator c
-            --out-path "${GLAD_ROOT}"
-    COMMENT "Generating GLAD (OpenGL 3.3 Core)"
-    VERBATIM)
-
-add_custom_target(glad_generate ALL
-    DEPENDS
-        "${GLAD_INCLUDE_DIR}/glad/glad.h"
-        "${GLAD_INCLUDE_DIR}/KHR/khrplatform.h"
-        "${GLAD_SRC_DIR}/glad.c")
-
-add_library(glad INTERFACE)
-target_include_directories(glad INTERFACE "${GLAD_INCLUDE_DIR}")
-add_dependencies(glad glad_generate)
-
-# --- Dependencies ---
-CPMAddPackage(
-    NAME Boost
-    URL "https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-cmake.tar.gz"
-    OPTIONS
-        "BOOST_ENABLE_CMAKE ON"
-        "BOOST_INCLUDE_LIBRARIES multiprecision")
-
-CPMAddPackage(
-    NAME EnTT
-    GITHUB_REPOSITORY skypjack/entt
-    GIT_TAG v3.11.0
-    VERSION 3.11.0)
-
-CPMAddPackage(
-    NAME assimp
-    GITHUB_REPOSITORY assimp/assimp
-    GIT_TAG v6.0.4
-    OPTIONS
-        "BUILD_SHARED_LIBS OFF"
-        "ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT OFF")
-
-CPMAddPackage(
-    NAME yaml-cpp
-    GITHUB_REPOSITORY jbeder/yaml-cpp
-    GIT_TAG yaml-cpp-0.9.0)
-
-CPMAddPackage(
-    NAME stb
-    GITHUB_REPOSITORY nothings/stb
-    GIT_TAG master
-    DOWNLOAD_ONLY YES)
-
-if(stb_ADDED)
-    add_library(stb INTERFACE)
-    target_include_directories(stb INTERFACE "${stb_SOURCE_DIR}")
-endif()
-
 # Must be set before CPMAddPackage(reflectcpp) to actually take effect
 set(REFLECTCPP_YAML ON)
 CPMAddPackage(
@@ -92,29 +78,47 @@ CPMAddPackage(
     GITHUB_REPOSITORY getml/reflect-cpp
     GIT_TAG v0.25.0)
 
+# --- Corrade (Magnum's base/support library) ---
+set(CORRADE_WITH_INTERCONNECT OFF CACHE BOOL "" FORCE)
+set(CORRADE_BUILD_TESTS       OFF CACHE BOOL "" FORCE)
+
 CPMAddPackage(
-    NAME imgui
-    GITHUB_REPOSITORY ocornut/imgui
-    GIT_TAG v1.92.8)
+    NAME corrade
+    GITHUB_REPOSITORY mosra/corrade
+    GIT_TAG v2020.06)
 
-add_library(imgui_lib STATIC
-    ${imgui_SOURCE_DIR}/imgui.cpp
-    ${imgui_SOURCE_DIR}/imgui_draw.cpp
-    ${imgui_SOURCE_DIR}/imgui_tables.cpp
-    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-    ${imgui_SOURCE_DIR}/imgui_demo.cpp)
-target_include_directories(imgui_lib PUBLIC ${imgui_SOURCE_DIR})
-target_compile_features(imgui_lib PUBLIC cxx_std_23)
+if(corrade_ADDED)
+    list(APPEND CMAKE_MODULE_PATH "${corrade_SOURCE_DIR}/modules")
+endif()
 
-add_library(imgui_backend STATIC
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp)
-target_include_directories(imgui_backend PUBLIC ${imgui_SOURCE_DIR})
-target_link_libraries(imgui_backend PUBLIC imgui_lib glfw)
+# --- Magnum (graphics engine) ---
+# Forced (not plain OPTIONS) so these can't be silently ignored by a
+# stale cache entry from an earlier configure.
+set(MAGNUM_WITH_SDL2APPLICATION          OFF CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_GLFWAPPLICATION          ON  CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_WINDOWLESSEGLAPPLICATION OFF CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_TRADE                    ON  CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_MESHTOOLS                ON  CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_SCENEGRAPH               ON  CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_SHADERS                  ON  CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_AUDIO                    OFF CACHE BOOL "" FORCE)
+set(MAGNUM_WITH_VK                       OFF CACHE BOOL "" FORCE)
+set(MAGNUM_BUILD_TESTS                   OFF CACHE BOOL "" FORCE)
+set(MAGNUM_BUILD_STATIC                  ON  CACHE BOOL "" FORCE)
 
-add_library(imgui ALIAS imgui_backend)
+CPMAddPackage(
+    NAME magnum
+    GITHUB_REPOSITORY mosra/magnum
+    GIT_TAG v2020.06)
 
-# --- Engine library ---
+if(magnum_ADDED)
+    list(APPEND CMAKE_MODULE_PATH "${magnum_SOURCE_DIR}/modules")
+endif()
+
+# ---------------------------------------------------------------------
+# Engine library
+# ---------------------------------------------------------------------
+
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/engine/src/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/engine/src/**/*.cpp")
@@ -128,20 +132,24 @@ add_library(engine STATIC ${ENGINE_SOURCES})
 target_compile_features(engine PUBLIC cxx_std_23)
 target_include_directories(engine PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-target_sources(engine PRIVATE "${GLAD_SRC_DIR}/glad.c")
-set_source_files_properties("${GLAD_SRC_DIR}/glad.c" PROPERTIES LANGUAGE CXX)
-add_dependencies(engine glad_generate)
-
 target_link_libraries(engine PUBLIC
-    glad
     glfw
-    #Boost::multiprecision
+    glm::glm
+    GLEW::GLEW
+    assimp::assimp
     EnTT::EnTT
-    reflectcpp
-    yaml-cpp
-    assimp
+    yaml-cpp::yaml-cpp
+    Boost::boost
     stb
-    imgui)
+    imgui::imgui
+    reflectcpp
+    Magnum::Magnum
+    Magnum::GL
+    Magnum::GlfwApplication
+    Magnum::Trade
+    Magnum::MeshTools
+    Magnum::SceneGraph
+    Magnum::Shaders)
 
 # --- Example executable ---
 add_executable(example example/main.cpp)
@@ -154,3 +162,4 @@ add_custom_target(copy_compile_commands ALL
         "${CMAKE_SOURCE_DIR}/compile_commands.json"
     DEPENDS "${CMAKE_BINARY_DIR}/compile_commands.json"
     COMMENT "Copying compile_commands.json to project root")
+    

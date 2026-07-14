@@ -1,13 +1,13 @@
 #pragma once
 
-#include "core/math/vector.hpp"
-#include "core/math/quaternion.hpp"
-#include "core/math/utilities.hpp"
-#include "core/render_utils.hpp"
+#include "math/vector.hpp"
+#include "math/quaternion.hpp"
+#include "math/utilities.hpp"
+#include "rendering/render_utils.hpp"
 #include "ecs/components/camera.hpp"
 #include "ecs/components/point_light.hpp"
-#include "core/resources/mesh.hpp"
-#include "core/resources/material.hpp"
+#include "resources/mesh.hpp"
+#include "resources/material.hpp"
 
 #include <vector>
 #include <span>
@@ -54,6 +54,13 @@ struct Frustrum {
   Plane near;
 };
 
+struct PointLightData {
+  float intensity; // w/m^2
+  float range; // m
+  Vector3 position;
+  Color color;
+};
+
 /*
 Frustrum createFrustrum(const CameraData& cam, float aspect) {
   Frustrum frustrum;
@@ -97,8 +104,7 @@ Frustrum createFrustrum(const CameraData& cam, float aspect) {
 
 struct SceneGraph {
   // goal is to have everything that is the same
-  // material and mesh be represented in the same
-  // object.
+  // material and mesh be represented in the same object.
   // so i need a multimap of a pair<Mesh, Material> -> many <Matrix4x4F>
   // ultimatly a single instance can have a ton of different locations,
   // which lends itself nicely to instanced drawing
@@ -121,7 +127,7 @@ struct SceneGraph {
 
   std::unordered_map<std::pair<Handle<Mesh>, Handle<Material>>, std::vector<ModelData>> models;
   std::unordered_map<int, CameraData> cameras;
-  std::vector<PointLight> pointLights;
+  std::vector<PointLightData> pointLights;
   //std::vector<GuiElement> guiElements;
   //std::vector<PostProcess> postProcesses;
 
@@ -160,6 +166,10 @@ struct SceneGraph {
     }
   }
 
+  void submitPointLight(float intensity, float range, Vector3 pos, Color color) {
+    pointLights.push_back(PointLightData{intensity, range, pos, color});
+  }
+
   int numModels() {
     return models.size();
   }
@@ -167,5 +177,6 @@ struct SceneGraph {
   void clear() {
     models.clear();
     cameras.clear();
+    pointLights.clear();
   }
 };

@@ -56,9 +56,16 @@ pkgs.mkShell {
     udev
     alsa-lib
     pipewire
+    
     glfw
     glm
     glew
+    assimp
+    entt
+    yaml-cpp
+    stb
+    imgui
+    boost
 
     # ---- Nix dev tooling ----
     nixpkgs-fmt

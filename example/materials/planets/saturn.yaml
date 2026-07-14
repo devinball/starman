@@ -2,5 +2,5 @@ shader: "example/shaders/tex.glsl"
 filterMode: "linear"
 properties:
   tex: "example/textures/saturn.jpg"
-  ambient: 0.5
+  ambient: 0.05
   scale: 1

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "core/math/constants.hpp"
-#include "core/math/vector.hpp"
+#include "math/constants.hpp"
+#include "math/vector.hpp"
 #include "ecs/system.hpp"
 
 #include "ecs/components/rigidbody.hpp"
 #include "ecs/components/spatial.hpp"
 
-#include "core/math/utilities.hpp"
+#include "math/utilities.hpp"
 
 #include <math.h>
 

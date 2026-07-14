@@ -1,8 +1,7 @@
 #pragma once
 
-#include "core/math/matrix.hpp"
-#include "core/math/color.hpp"
-#include "core/render_utils.hpp"
+#include "math/matrix.hpp"
+#include "math/color.hpp"
 
 // likely will also need render target
 struct Camera {

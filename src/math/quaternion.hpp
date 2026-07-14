@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/math/number.hpp"
+#include "math/number.hpp"
 
 // --- LLM WRITTEN ---
 template <typename T>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/math/vector.hpp"
+#include "math/vector.hpp"
 
 struct KeplerianOrbiter {
   double apoapsis;

@@ -4,8 +4,8 @@
 
 #include "ecs/ecs.hpp"
 #include "core/context.hpp"
-#include "core/resources/scene.hpp"
-#include "core/math/utilities.hpp"
+#include "resources/scene.hpp"
+#include "math/utilities.hpp"
 
 #include "ecs/systems/render_system.hpp"
 #include "ecs/systems/physics_system.hpp"
@@ -42,7 +42,7 @@ struct SceneManager {
   public:
     std::shared_ptr<Context> context;
 
-    void create(const std::string material, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode) {
+    void createPlanet(const std::string material, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode) {
       Entity entity = context->registry->create();
       context->registry->emplace<Spatial>(entity, Vector3{0, 0, 0}, Vector3F{radius, radius, radius}, eulerToQuaternion(180, 0, 0));
       Handle<Mesh> mesh = context->resourceManager->load<Mesh>("example/models/uv_sphere.obj");
@@ -56,6 +56,15 @@ struct SceneManager {
       context->registry->emplace<KeplerianOrbiter>(entity, 0, 0, eccentricity, semiMajorAxis, 0, 0, radians(incl), radians(longAsN), radians(argPeri), radians(longPeri), 0, orbPer, bary);
     }
 
+    void createLight() {
+      Entity entity = context->registry->create();
+      context->registry->emplace<Spatial>(entity, Vector3{0, 0, 0}, Vector3F{0, 0, 0}, QuaternionF());
+      context->registry->emplace<PointLight>(entity, 3.86e4, 2e6, Color(0.99,0.9,0.44,0));
+
+      // p = 3.86e24
+      // r = 200e24
+    }
+
     void init() {
       YAML::Node config = YAML::LoadFile("example/scenes/simple.yaml");
 
@@ -65,31 +74,39 @@ struct SceneManager {
       }
       */
 
-
       // TODO: High numbers of meshes do not preform as well as i would like
 
       Entity camera = context->registry->create();
       context->registry->emplace<Spatial>(camera, Vector3(0, 0, 0), Vector3F{1, 1, 1}, QuaternionF());
-      context->registry->emplace<Camera>(camera, true, 0, 0, 90.f, 10000000000.f, 100000000000000000.f, Color(0, 0, 0.01, 1));
+      context->registry->emplace<Camera>(camera, true, 0, 0, 90.f, 10000000000.f, 100000000000000000.f, Color(0, 0.2, 0.01, 1));
       context->registry->emplace<CameraController>(camera, 10000.f);
 
-      create("example/materials/planets/sun.yaml", 50.0 * 696000000, 1989100e24, 0.1, 0.1, 0, 0, 0); // sun
-      create("example/materials/planets/mecury.yaml", 700.0 * 2440530, 0.330103e24, 5.79091e7 * 1e3, 0.2000000564, 7.00559432, 77.45771895, 48.33961819); // mecury
-      create("example/materials/planets/venus.yaml", 700.0 * 6051800, 4.86731e24, 1.08209e8 * 1e3, 0.00676, 3.39777545, 131.76755713, 76.67261496); // venus
-      create("example/materials/planets/earth.yaml", 700.0 * 6378137, 5.97217e24, 1.49598e8 * 1e3, 0.01670, -0.00054346, 102.93005885, -5.11260389); // earth
-        //create("example/materials/planets/moon.yaml", 700.0 * radius, mass, 3.83398e5 * 1e3, 0.05555, 0, 0, 0); // moon
-      create("example/materials/planets/mars.yaml", 700.0 * 3396190, 0.641691e24, 2.27939e8 * 1e3, 0.09342, 1.85181869, -23.91744784, 49.71320984); // mars
-      create("example/materials/planets/jupiter.yaml", 100.0 * 71492000, 1898.125e24, 7.78321e8 * 1e3, 0.04846, 1.29861416, 14.27495244, 100.29282654); // jupiter
-      create("example/materials/planets/saturn.yaml", 100.0 * 60268000, 568.317e24, 1.4291e9 * 1e3, 0.05468, 2.49424102, 92.86136063, 113.63998702); // saturn
-      create("example/materials/planets/uranus.yaml", 500.0 * 25559000, 86.8099e24, 2.87479e9 * 1e3, 0.04739, 0.77298127 , 172.43404441, 73.96250215); // uranus
-      create("example/materials/planets/neptune.yaml", 500.0 * 24764000, 102.4092e24, 4.50489e9 * 1e3, 0.00911, 1.77005520, 46.68158724, 131.78635853); // neptune
+      createLight();
 
-      //create("example/materials/planets/sun.yaml", 482100, 936.416e18, e9 * 1e3, ); // ceres
-      //create("example/materials/planets/sun.yaml", 1188300, 12024.6e18, 5.91540e9 * 1e3, 0.24906); // pluto
-      //create("example/materials/planets/sun.yaml", 1200000, 16600e18, e9 * 1e3, ); // eris
-      //create("example/materials/planets/sun.yaml", 717000, 3100e18, e9 * 1e3, ); // makemake
-      //create("example/materials/planets/sun.yaml", 870000, 4006e18, e9 * 1e3, ); // haumea
-      
+      //createPlanet("example/materials/planets/sun.yaml", 50.0 * 696000000, 1989100e24, 0.1, 0.1, 0, 0, 0); // sun
+      createPlanet("example/materials/planets/mecury.yaml", 700.0 * 2440530, 0.330103e24, 5.79091e7 * 1e3, 0.2000000564, 7.00559432, 77.45771895, 48.33961819); // mecury
+      createPlanet("example/materials/planets/venus.yaml", 700.0 * 6051800, 4.86731e24, 1.08209e8 * 1e3, 0.00676, 3.39777545, 131.76755713, 76.67261496); // venus
+      createPlanet("example/materials/planets/earth.yaml", 700.0 * 6378137, 5.97217e24, 1.49598e8 * 1e3, 0.01670, -0.00054346, 102.93005885, -5.11260389); // earth
+        //createPlanet("example/materials/planets/moon.yaml", 700.0 * radius, mass, 3.83398e5 * 1e3, 0.05555, 0, 0, 0); // moon
+      createPlanet("example/materials/planets/mars.yaml", 700.0 * 3396190, 0.641691e24, 2.27939e8 * 1e3, 0.09342, 1.85181869, -23.91744784, 49.71320984); // mars
+      createPlanet("example/materials/planets/jupiter.yaml", 100.0 * 71492000, 1898.125e24, 7.78321e8 * 1e3, 0.04846, 1.29861416, 14.27495244, 100.29282654); // jupiter
+      createPlanet("example/materials/planets/saturn.yaml", 100.0 * 60268000, 568.317e24, 1.4291e9 * 1e3, 0.05468, 2.49424102, 92.86136063, 113.63998702); // saturn
+      createPlanet("example/materials/planets/uranus.yaml", 500.0 * 25559000, 86.8099e24, 2.87479e9 * 1e3, 0.04739, 0.77298127 , 172.43404441, 73.96250215); // uranus
+      createPlanet("example/materials/planets/neptune.yaml", 500.0 * 24764000, 102.4092e24, 4.50489e9 * 1e3, 0.00911, 1.77005520, 46.68158724, 131.78635853); // neptune
+
+      //createPlanet("example/materials/planets/sun.yaml", 482100, 936.416e18, e9 * 1e3, ); // ceres
+      //createPlanet("example/materials/planets/sun.yaml", 1188300, 12024.6e18, 5.91540e9 * 1e3, 0.24906); // pluto
+      //createPlanet("example/materials/planets/sun.yaml", 1200000, 16600e18, e9 * 1e3, ); // eris
+      //createPlanet("example/materials/planets/sun.yaml", 717000, 3100e18, e9 * 1e3, ); // makemake
+      //createPlanet("example/materials/planets/sun.yaml", 870000, 4006e18, e9 * 1e3, ); // haumea
+
+      for (int i = 0; i < 100; i++) {
+        Entity entity = context->registry->create();
+        context->registry->emplace<Spatial>(entity, Vector3{randomF() * 100, randomF() * 100, randomF() * 100}, Vector3F{10, 10, 10}, eulerToQuaternion(180, 0, 0));
+        Handle<Mesh> mesh = context->resourceManager->load<Mesh>("example/models/simple_frog.obj");
+        Handle<Material> mat = context->resourceManager->load<Material>("example/materials/fabric.yaml");
+        context->registry->emplace<MeshRenderer>(entity, mesh, mat);
+      }
 
       /*
       float d = 0.5;

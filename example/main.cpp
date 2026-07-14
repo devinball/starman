@@ -1,7 +1,7 @@
 #include "core/application.hpp"
 #include "iostream"
-#include "core/rendering/opengl/opengl_renderer.hpp"
-#include "core/math/utilities.hpp"
+//#include "rendering/opengl_renderer.hpp"
+#include "math/utilities.hpp"
 #include <chrono>
 
 /*

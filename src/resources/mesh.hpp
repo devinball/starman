@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/resources/resource.hpp"
-#include "core/math/vector.hpp"
+#include "resources/resource.hpp"
+#include "math/vector.hpp"
 
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -34,7 +34,7 @@ struct Mesh : Resource {
 
     if (scene == NULL) {
       //printf(aiGetErrorString());
-      printf("something went wrong when loading a mesh");
+      printf("something went wrong when loading a mesh\n");
       return false;
     }
 

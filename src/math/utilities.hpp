@@ -1,9 +1,9 @@
 #pragma once
 
-#include "core/math/vector.hpp"
-#include "core/math/matrix.hpp"
-#include "core/math/quaternion.hpp"
-#include "core/math/constants.hpp"
+#include "math/vector.hpp"
+#include "math/matrix.hpp"
+#include "math/quaternion.hpp"
+#include "math/constants.hpp"
 
 Matrix4x4F identityMatrix4x4F() {
   return Matrix4x4F({

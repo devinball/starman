@@ -1,7 +1,7 @@
 #pragma once
 
 //#include <boost/multiprecision/cpp_bin_float.hpp>
-#include "core/math/number.hpp"
+#include "math/number.hpp"
 
 namespace Constants {
   const Number pi(3.1415); //= boost::math::constants::pi<Number>(); // ratio of diameter to circumference

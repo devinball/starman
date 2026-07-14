@@ -2,11 +2,10 @@
 
 #include "core/context.hpp"
 #include "ecs/ecs.hpp"
-#include "core/layers/layer.hpp"
-#include "core/rendering/opengl/opengl_renderer.hpp"
+//#include "rendering/opengl_renderer.hpp"
+#include "rendering/magnum_renderer.hpp"
 #include "core/scene_manager.hpp"
 #include "core/input_buffer.hpp"
-#include "core/gui_manager.hpp"
 
 #include <memory>
 #include <chrono>
@@ -16,39 +15,23 @@ struct Application {
 
   float physicsFrequency = 60; // physics update rate in hertz
 
-  // application holds onto layers
-  // we can add and remove layers from the stack
-  // application will by default add a bunch of layers
-  // to the stack-> maybe in future this can be disabled
-  // via build flags.
-
-  GUIManager guiManager;
-
   void run() {
-    // some of these, especially the renderer may need to
-    // be moved to their own initialization functions, in
-    // the case of the renderer for example this would find
-    // the correct backend to use.
     context = std::make_shared<Context>(
       std::make_shared<SceneGraph>(),
       std::make_shared<SceneManager>(),
       std::make_shared<ResourceManager>(),
       std::make_shared<Registry>(),
-      std::make_shared<OpenGLRenderer>(),
+      std::make_shared<MagnumRenderer>(),
       std::make_shared<InputBuffer>()
     );
 
-    context->dt = 1 / physicsFrequency; // well it should be anyways
+    context->dt = 1 / physicsFrequency;
 
-    context->renderer->resourceManager = context->resourceManager;
-    context->renderer->sceneGraph = context->sceneGraph;
-    context->renderer->inputBuffer = context->inputBuffer;
+    context->renderer->context = context;
     context->renderer->init({800, 600, "engine", false, false});
 
-    context->sceneManager->context = context; // this feels wrong...
+    context->sceneManager->context = context;
     context->sceneManager->init();
-
-    guiManager.init();
 
     float accumulator = 0;
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -72,8 +55,6 @@ struct Application {
       context->renderer->beginFrame();
       context->renderer->render();
       context->renderer->endFrame();
-
-      guiManager.render();
 
       // reuse now from physics loop calculation for begin frame time
       elapsed = std::chrono::high_resolution_clock::now() - now;

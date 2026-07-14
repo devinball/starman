@@ -2,7 +2,7 @@
 
 #include "ecs/system.hpp"
 #include "core/context.hpp"
-#include "core/math/utilities.hpp"
+#include "math/utilities.hpp"
 
 #include "ecs/components/spatial.hpp"
 #include "ecs/components/mesh_renderer.hpp"
@@ -57,6 +57,16 @@ struct RenderSystem : System {
           camera.clearColor,
           spatial.position,
           spatial.rotation
+        );
+      });
+
+      auto pointLightView = context->registry->view<PointLight, Spatial>();
+      pointLightView.each([this](auto &light, auto &spatial){
+        context->sceneGraph->submitPointLight(
+          light.intensity,
+          light.range,
+          spatial.position,
+          light.color
         );
       });
     }

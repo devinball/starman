@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/resources/resource.hpp"
-#include "core/filesystem/image.hpp"
+#include "resources/resource.hpp"
+#include "filesystem/image.hpp"
 
 #include <stdint.h>
 #include <vector>

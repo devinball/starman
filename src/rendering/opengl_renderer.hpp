@@ -1,11 +1,11 @@
 #pragma once
 
-#include "core/renderer.hpp"
-#include "core/resources/mesh.hpp"
-#include "core/math/utilities.hpp"
-#include "core/resources/shader.hpp"
-#include "core/resources/image.hpp"
-#include "core/resources/material.hpp"
+#include "rendering/renderer.hpp"
+#include "resources/mesh.hpp"
+#include "math/utilities.hpp"
+#include "resources/shader.hpp"
+#include "resources/image.hpp"
+#include "resources/material.hpp"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -55,6 +55,10 @@ struct OpenGLRenderer : Renderer {
   private:
     GLFWwindow* window;
 
+    std::shared_ptr<ResourceManager> resourceManager;
+    std::shared_ptr<SceneGraph> sceneGraph;
+    std::shared_ptr<InputBuffer> inputBuffer;
+
     void processInput() {
       glfwPollEvents();
 
@@ -74,8 +78,6 @@ struct OpenGLRenderer : Renderer {
       }
     }
 
-    uint maxInstances = 50000;
-
     struct GPUMesh {
       uint VBO, VAO, EBO, numVerts, instanceVBO;
     };
@@ -93,17 +95,20 @@ struct OpenGLRenderer : Renderer {
       std::vector<uint> uniformLocations;
     };
 
-    // handle id -> GPUMesh  TODO: i should really just write a hash for handle
+    struct GPULight {
+      Vector4F posIntensity; // x, y, z | intensity
+      Vector4F colorRange; // r, g, b | range
+    };
+
     std::unordered_map<ResourceID, GPUMesh> meshCache;
     std::unordered_map<ResourceID, GPUTexture> textureCache;
     std::unordered_map<ResourceID, GPUShader> shaderCache;
-
-    // shader cache
-    // mesh cache
-    // material cache
-
   public:
     void init(const WindowSettings settings) {
+      resourceManager = context->resourceManager;
+      sceneGraph = context->sceneGraph;
+      inputBuffer = context->inputBuffer;
+
       framebufferWidth = settings.width;
       framebufferHeight = settings.height;
 
@@ -212,7 +217,6 @@ struct OpenGLRenderer : Renderer {
         printf("VERTEX SHADER COMPILE ERROR: %s\n", infoLog);
       }
 
-      
       fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
       glShaderSource(fragmentShader, 1, &fragment, nullptr);
       glCompileShader(fragmentShader);
@@ -238,6 +242,12 @@ struct OpenGLRenderer : Renderer {
       glDeleteShader(fragmentShader);
 
       //printf("Compiled Shader Program\n");
+
+      uint blockIndex = glGetUniformBlockIndex(shaderProgram, "Lights");
+      printf("Lights block index: %u\n", blockIndex);
+      if (blockIndex != GL_INVALID_INDEX) {
+        glUniformBlockBinding(shaderProgram, blockIndex, 0);
+      }
 
       return shaderProgram;
     }
@@ -336,6 +346,15 @@ struct OpenGLRenderer : Renderer {
       //printf("Loaded mesh to gpu\n");
     }
 
+    uint lightUBO;
+    uint maxLights = 64;
+    void setupLightig() {
+      glGenBuffers(1, &lightUBO);
+      glBindBuffer(GL_UNIFORM_BUFFER, lightUBO);
+      glBufferData(GL_UNIFORM_BUFFER, sizeof(GPULight) * maxLights, nullptr, GL_DYNAMIC_DRAW);
+      glBindBufferBase(GL_UNIFORM_BUFFER, 0, lightUBO);
+    }
+
     void beginFrame() {
       processInput();
 
@@ -359,7 +378,7 @@ struct OpenGLRenderer : Renderer {
       glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
       */
 
-      sceneGraph->eachCamera([&](CameraData& cameraData){
+      sceneGraph->eachCamera([&](CameraData& cameraData) {
         glClearColor(cameraData.clearColor.x, cameraData.clearColor.y, cameraData.clearColor.z, cameraData.clearColor.w);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -371,10 +390,36 @@ struct OpenGLRenderer : Renderer {
 
         Frustrum frustrum;
 
+        std::vector<GPULight> lights;
+
+        for (auto& pointLight : sceneGraph->pointLights) {
+          Vector4F v1 = {
+            float(pointLight.position.x - cameraData.position.x),
+            float(pointLight.position.y - cameraData.position.y),
+            float(pointLight.position.z - cameraData.position.z),
+            pointLight.intensity
+          };
+          Vector4F v2 = {
+            pointLight.color.x,
+            pointLight.color.y,
+            pointLight.color.z,
+            pointLight.range
+          };
+          GPULight light = { v1, v2 };
+          lights.push_back(light);
+        }
+
+        int lightCount = lights.size();
+        if (lightCount > maxLights) {
+          lightCount = maxLights;
+        }
+
+        glBindBuffer(GL_UNIFORM_BUFFER, lightUBO);
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(GPULight) * lightCount, lights.data());
+        glBufferSubData(GL_UNIFORM_BUFFER, sizeof(GPULight) * maxLights, sizeof(int), &lightCount);
+
         sceneGraph->eachModel(frustrum, [&](Handle<Mesh> meshHandle, Handle<Material> materialHandle, std::vector<ModelData>& modelDatas) {
           int numInstances = modelDatas.size();
-
-          assert(numInstances <= maxInstances);
 
           // TODO: sort array such that the same meshes/materials are next to each other
           // TODO: only bind if mesh needs to be changed
@@ -438,8 +483,11 @@ struct OpenGLRenderer : Renderer {
         });
       });
 
-      ImGui::Begin("hello");
-      ImGui::Text("this is text");
+      ImGui::Begin("Engine");
+      ImGui::Text("Frametime (ms): %f", context->frameTime * 1000);
+      ImGui::Text("FPS (Hz): %i", int(1 / context->frameTime));
+
+      //printf("Frametime: %f ms FPS: %i\n", context->frameTime * 1000, int(1 / context->frameTime));
       ImGui::End();
     }
 

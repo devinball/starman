@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/math/number.hpp"
-#include "core/math/vector.hpp"
-#include "core/math/quaternion.hpp"
+#include "math/number.hpp"
+#include "math/vector.hpp"
+#include "math/quaternion.hpp"
 
 using Trajectory = std::vector<Vector4>;
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/math/matrix.hpp"
-#include "core/resources/mesh.hpp"
-#include "core/resources/material.hpp"
+#include "math/matrix.hpp"
+#include "resources/mesh.hpp"
+#include "resources/material.hpp"
 #include "core/resource.hpp"
 
 struct DrawCommand {

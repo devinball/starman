@@ -68,7 +68,7 @@ struct KeplerianOrbitSystem : System {
     void update() {
       auto view = context->registry->view<KeplerianOrbiter, Spatial>();
       view.each([this](auto &keplerianOrbiter, auto &spatial) {
-        double t = context->runtime * 3600 * 24 * 365 * 0.11; // 100 seconds = 1 year
+        double t = context->runtime * 3600 * 24 * 365 / 100; // 100 seconds = 1 year
         double M = 2 * std::numbers::pi * t / keplerianOrbiter.orbitalPeriod;
         assert(keplerianOrbiter.orbitalPeriod > 0);
         double E = eccentric_anomaly(M, keplerianOrbiter.eccentricity);

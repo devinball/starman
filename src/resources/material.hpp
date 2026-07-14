@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/resources/resource.hpp"
-#include "core/math/vector.hpp"
-#include "core/filesystem/file.hpp"
+#include "resources/resource.hpp"
+#include "math/vector.hpp"
+#include "filesystem/file.hpp"
 
 #include "rfl.hpp"
 #include "rfl/yaml.hpp"

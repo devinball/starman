@@ -51,6 +51,12 @@ maybe one layer could just handle timing and loops, it would call a special on u
 
 
 # Notes
+maybe i unify the renderer interface with scene graph, then
+renderer implementations are free to deal with things as is
+best for that specific library. for example i think filiment
+and magnum have their own scene graph like thing, it would be
+easier to just use those. hooray for monolith classes!
+
 maybe for rendering i can habve multipl ernder targets
 0 - screen output
 1 - normal
