@@ -15,10 +15,15 @@ void main() {
   vec4 worldPos = aModel * vec4(aVertex, 1.0);
   gl_Position = aVp * worldPos;
 
-  vNormal = transpose(inverse(mat3(aModel))) * aNormal;
+  vNormal = normalize(transpose(inverse(mat3(aModel))) * aNormal);
   vUv = aUv;
 
   vPos = worldPos.xyz;
+
+  float C = 1.f;
+  float far = 100000000000000000.f;
+
+  gl_Position.z = (2.0 * log(gl_Position.w * C + 1.0) / log(far * C + 1.0) - 1.0) * gl_Position.w;
 }
 
 #pragma fragment
@@ -30,47 +35,40 @@ in vec2 vUv;
 
 out vec4 fragColor;
 
+//uniform float specularStrength;
 uniform float ambient;
 uniform float scale;
 uniform sampler2D tex;
 
-#define MAX_LIGHTS 64
+#define MAX_LIGHTS 16
 
 struct PointLight {
-  vec4 posIntensity;
-  vec4 colorRange;
+  vec3 position;
+  vec3 color;
 };
 
-layout (std140) uniform Lights {
-  PointLight lights[MAX_LIGHTS];
-  int lightCount;
-};
+uniform PointLight pointLights[MAX_LIGHTS];
+uniform int lightCount;
 
-vec3 light(vec3 p, vec3 n) {
-  vec3 lightAccum = vec3(ambient);
-  for (int i = 0; i < lightCount; ++i) {
-    vec3 toL = lights[i].posIntensity.xyz - vPos;
-    float d = length(toL);
-    vec3 L = toL / max(d, 0.0001);
+vec3 calcPointLight(PointLight light) {
+  float specularStrength = 0.1f;
 
-    float atten = clamp(1.0 - d / lights[i].colorRange.w, 0.0, 1.0);
-    atten *= atten;
+  vec3 lightDir = normalize(light.position - vPos);
+  vec3 viewDir = normalize(-vPos);
+  vec3 reflectDir = reflect(-lightDir, vNormal);
+  float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+  vec3 specular = specularStrength * spec * light.color;
 
-    float diffuse = max(dot(n, L), 0.0);
-    lightAccum += lights[i].colorRange.rgb * lights[i].posIntensity.a * diffuse * atten;
-  }
-
-  return lightAccum;
+  float diffuse = max(dot(vNormal, lightDir), 0.0);
+  return (vec3(ambient + diffuse) + specular) * light.color;
 }
 
 void main() {
+  // !! camera is 0, 0, 0, which explains this issue, the shadows are just always away from the camera
   vec4 albedo = texture(tex, scale * vUv);
-  vec3 l = light(vPos, vNormal);
-  float test = 0.0;
-
+  vec3 l;
   for (int i = 0; i < lightCount; ++i) {
-    test += 0.4;
+    l += calcPointLight(pointLights[i]);
   }
-
-  fragColor = vec4(albedo.rgb * test, 1.0); // vec4(albedo.rgb * ambient * 10, albedo.a); // * is component multiplication
+  fragColor = vec4(albedo.rgb * l, 1.0f); // vec4(normalize(pointLights[0].position - vPos), 1.0f); // vec4(albedo.rgb * l, 1.0);
 }

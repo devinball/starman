@@ -7,10 +7,10 @@
 
 struct NewtonianOrbitSystem : System {
   private:
-      Vector3 calculateGravitationalForce(float m2, Vector3 p1, Vector3 p2) {
-        Vector3 delta = p1 - p2;
+      Vector3N calculateGravitationalForce(float m2, Vector3N p1, Vector3N p2) {
+        Vector3N delta = p1 - p2;
         Number r = delta.magnitude();
-        Vector3 d = delta.normalized();
+        Vector3N d = delta.normalized();
         return d * Constants::G * m2 / (r * r);
       }
   public:

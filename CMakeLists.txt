@@ -63,6 +63,10 @@ find_package(assimp REQUIRED)
 #find_package(imgui REQUIRED)
 
 
+set(Boost_NO_BOOST_CMAKE ON)
+find_package(Boost REQUIRED)
+
+
 CPMAddPackage(
     NAME stb
     GITHUB_REPOSITORY nothings/stb
@@ -126,7 +130,7 @@ add_dependencies(engine glad_generate)
 target_link_libraries(engine PUBLIC
     glad
     glfw
-    #Boost::multiprecision
+    Boost::boost
     EnTT::EnTT
     reflectcpp
     yaml-cpp

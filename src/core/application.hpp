@@ -16,7 +16,6 @@ struct Application {
 
   void run() {
     context = std::make_shared<Context>(
-      std::make_shared<SceneGraph>(),
       std::make_shared<SceneManager>(),
       std::make_shared<ResourceManager>(),
       std::make_shared<Registry>(),
@@ -32,39 +31,43 @@ struct Application {
     context->sceneManager->context = context;
     context->sceneManager->init();
 
-    float accumulator = 0;
+    float accumulator = 0.f;
     auto startTime = std::chrono::high_resolution_clock::now();
-    auto previous = std::chrono::high_resolution_clock::now();
-
-    std::chrono::duration<double> elapsed;
+    auto previous = startTime;
 
     while (context->running) {
       auto now = std::chrono::high_resolution_clock::now();
-      elapsed = now - previous;
+
+      std::chrono::duration<float> elapsedSeconds = now - previous;
+      float frameTime = elapsedSeconds.count();
       previous = now;
-      accumulator += elapsed.count();
+
+      if (frameTime <= 0.f) { frameTime = 0.00001f; }
+
+      context->frameTime = frameTime;
+
+      //printf("Frametime: %f ms FPS: %i\n", context->frameTime, int(1 / context->frameTime));
+
+      accumulator += frameTime;
 
       while (accumulator >= context->dt) {
         context->sceneManager->update();
+        context->simTime += context->dt;
         accumulator -= context->dt;
       }
-      
-      context->sceneManager->draw();
 
+      context->updateTime = context->dt;
+
+      context->physicsInterpolate = accumulator * physicsFrequency; // same as dividing by dt
+      
       context->renderer->beginFrame();
+      context->sceneManager->draw();
       context->renderer->render();
       context->renderer->endFrame();
 
-      // reuse now from physics loop calculation for begin frame time
-      elapsed = std::chrono::high_resolution_clock::now() - now;
-      context->frameTime = elapsed.count();
-
-      elapsed = std::chrono::high_resolution_clock::now() - startTime;
-      context->runtime = elapsed.count();
+      context->runtime = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - startTime).count();
 
       context->running = !context->renderer->shouldClose();
-
-      //printf("Frametime: %f ms FPS: %i\n", context->frameTime * 1000, int(1 / context->frameTime));
     }
 
     context->renderer->shutdown();

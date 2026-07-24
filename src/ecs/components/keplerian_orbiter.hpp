@@ -1,22 +1,18 @@
 #pragma once
 
 #include "math/vector.hpp"
+#include "ecs/ecs.hpp"
 
 struct KeplerianOrbiter {
-  double apoapsis;
-  double periapsis;
+  double mass;
   double eccentricity;
   double semiMajorAxis;
-  double semiMinorAxis;
-  double semiParameter;
-
   double inclination;
   double longAscendingNode;
   double argumentPeriapsis;
   double longPeriapsis;
-
-  double meanMotion;
   double orbitalPeriod;
 
-  Vector3 barycenter;
+  Vector3N barycenter;
+  Entity parent;
 };

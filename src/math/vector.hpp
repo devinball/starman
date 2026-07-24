@@ -25,6 +25,26 @@ struct Vector2T {
         return Vector2T{x * b, y * b};
     }
 
+    Vector2T& operator+=(const Vector2T& b) {
+        this->x += b.x;
+        this->y += b.y;
+        return *this;
+    }
+
+    Vector2T& operator-=(const Vector2T& b) {
+        this->x -= b.x;
+        this->y -= b.y;
+        return *this;
+    }
+
+    bool operator==(const Vector2T& b) {
+        return this->x == b.x && this->y == b.y;
+    }
+
+    bool operator!=(const Vector2T& b) {
+        return !(this->x == b.x && this->y == b.y);
+    }
+
     Vector2T normalized() {
         return Vector2T{x, y} / magnitude();
     }
@@ -34,7 +54,7 @@ struct Vector2T {
     }
     
     T magnitude() {
-        return sqrt(x*x + y*y);
+        return sqrt(squareMagnitude());
     }
 
     T squareMagnitude() {
@@ -64,6 +84,20 @@ struct Vector3T {
         return Vector3T{x * b, y * b, z * b};
     }
 
+    Vector3T& operator+=(const Vector3T& b) {
+        this->x += b.x;
+        this->y += b.y;
+        this->z += b.z;
+        return *this;
+    }
+
+    Vector3T& operator-=(const Vector3T& b) {
+        this->x -= b.x;
+        this->y -= b.y;
+        this->z -= b.z;
+        return *this;
+    }
+
     Vector3T normalized() {
         return Vector3T{x, y, z} / magnitude();
     }
@@ -77,7 +111,7 @@ struct Vector3T {
     }
 
     T magnitude() {
-        return sqrt(x*x + y*y + z*z);
+        return sqrt(squareMagnitude());
     }
 
     T squareMagnitude() {
@@ -108,6 +142,22 @@ struct Vector4T {
         return Vector4T{x * b, y * b, z * b, w * b};
     }
 
+    Vector4T& operator+=(const Vector4T& b) {
+        this->x += b.x;
+        this->y += b.y;
+        this->z += b.z;
+        this->w += b.w;
+        return *this;
+    }
+
+    Vector4T& operator-=(const Vector4T& b) {
+        this->x -= b.x;
+        this->y -= b.y;
+        this->z -= b.z;
+        this->w -= b.w;
+        return *this;
+    }
+
     Vector4T normalized() {
         return Vector4T{x, y, z, w} / magnitude();
     }
@@ -117,7 +167,7 @@ struct Vector4T {
     }
 
     T magnitude() {
-        return sqrt(x*x + y*y + z*z + w*w);
+        return sqrt(squareMagnitude());
     }
 
     T squareMagnitude() {
@@ -125,9 +175,9 @@ struct Vector4T {
     }
 };
 
-using Vector2 = Vector2T<Number>;
-using Vector3 = Vector3T<Number>;
-using Vector4 = Vector4T<Number>;
+using Vector2N = Vector2T<Number>;
+using Vector3N = Vector3T<Number>;
+using Vector4N = Vector4T<Number>;
 
 using Vector2F = Vector2T<float>;
 using Vector3F = Vector3T<float>;
@@ -141,6 +191,24 @@ using Vector2I = Vector2T<int>;
 using Vector3I = Vector3T<int>;
 using Vector4I = Vector4T<int>;
 
-Vector3F toVector3F(Vector3 v) {
+Vector3F toVector3F(Vector3N v) {
     return Vector3F{(float)v.x, (float)v.y, (float)v.z};
 }
+
+Vector3D toVector3D(Vector3N v) {
+    return Vector3D{(double)v.x, (double)v.y, (double)v.z};
+}
+
+Vector3N toVector3N(Vector3F v) {
+    return Vector3N{v.x, v.y, v.z};
+}
+
+/*
+    // TODO: this
+    // is D better ?? Or L?? or C??
+    template <typename C>
+    Vector4T<C> operator C() {
+        return Vector4T<C>{this->x, this->y, this->z, this->w};
+    }
+
+*/

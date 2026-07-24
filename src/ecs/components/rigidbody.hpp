@@ -4,15 +4,20 @@
 #include "math/vector.hpp"
 #include "math/quaternion.hpp"
 
-using Trajectory = std::vector<Vector4>;
-
 struct Rigidbody {
-    //Number properTime;
     float mass;
+    float momentInertia;
 
-    Vector3 velocity; // Should not need high precision, highest value is c anyways
-    Vector3 angularVelocity; // maybe should be vector3
-    Matrix3x3F momentInertia;
+    Vector3N position;
+    Vector3N velocity;
+    Vector3N acceleration;
+
+    QuaternionF rotation;
+
+    // don't need a ton of precision, not more than c anyways
+
+    Vector3N netTorque;
+    Vector3N netForce;    
 //    Number timeStep; // does not always have to be fixed maybe?
 //    uint64_t lastPositionIndex; // index of the last position we reached
 //    Trajectory trajectory; // list of 4-vectors that represents an objects path through spacetime

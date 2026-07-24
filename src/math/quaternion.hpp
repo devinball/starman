@@ -31,6 +31,22 @@ struct QuaternionT {
         return QuaternionT(r * b, i * b, j * b, k * b);
     }
 
+    QuaternionT& operator+=(const QuaternionT& b) {
+        this->r += b.r;
+        this->i += b.i;
+        this->j += b.j;
+        this->k += b.k;
+        return *this;
+    }
+
+    QuaternionT& operator-=(const QuaternionT& b) {
+        this->r -= b.r;
+        this->i -= b.i;
+        this->j -= b.j;
+        this->k -= b.k;
+        return *this;
+    }
+
     // Quaternion multiplication (Hamilton product)
     QuaternionT operator*(const QuaternionT &b) const {
         return QuaternionT(
@@ -42,7 +58,7 @@ struct QuaternionT {
     }
 
     // Multiply by vector (treating vector as pure quaternion with w=0)
-    QuaternionT operator*(const Vector3 &b) const {
+    QuaternionT operator*(const Vector3N &b) const {
         return *this * QuaternionT(0, b.x, b.y, b.z);
     }
 

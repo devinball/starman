@@ -9,65 +9,29 @@
 #include "ecs/components/camera.hpp"
 
 struct RenderSystem : System {
-  private:
-    void localizeMesh(); // convert from Number space to local float
+  void init() {
 
-  public:
-    void init() {
+  }
 
-    }
+  void draw() {
+    // maybe right here i loop over all the cameras and preform the transforms into their
+    // space ?
+    // or maybe the spatial should stay as Number until a specific camera is rendering it?
 
-    void draw() {
-      // maybe right here i loop over all the cameras and preform the transforms into their
-      // space ?
-      // or maybe the spatial should stay as Number until a specific camera is rendering it?
-      
-      context->sceneGraph->clear();
-
+    auto meshRendererView = context->registry->view<MeshRenderer, Spatial>();
+    meshRendererView.each([this](auto &meshRenderer, auto &spatial){
       // need to determine culling
-      auto meshRendererView = context->registry->view<MeshRenderer, Spatial>();
-      meshRendererView.each([this](auto &meshRenderer, auto &spatial){
-        // must have uniform non-negative scaling
-        // in the future allowing non-uniform scaling would be a good idea
-        //printf("%f %f %f \n", spatial.scale.x, spatial.scale.y, spatial.scale.z);
-        //assert(spatial.scale.x == spatial.scale.y == spatial.scale.z);
-        //assert(spatial.scale.x > 0);
+      context->renderer->addMesh3D(meshRenderer.mesh, meshRenderer.material, spatial);
+    });
 
-        // right here we need to preform a floating origin such
-        // that the camera is always the renderer's origin
-        // this way we can keep renderer performance, (maybe
-        // even allowing me to use float16), while also
-        // doing physics in large scale coordinates
+    auto cameraView = context->registry->view<Camera, Spatial>();
+    cameraView.each([this](auto &camera, auto &spatial){
+      context->renderer->addCamera3D(camera, spatial);
+    });
 
-        context->sceneGraph->submitModel(
-          meshRenderer.mesh,
-          meshRenderer.material,
-          spatial.position,
-          spatial.scale,
-          spatial.rotation
-        );
-      });
-
-      // TODO: use camera properties
-      auto cameraView = context->registry->view<Camera, Spatial>();
-      cameraView.each([this](auto &camera, auto &spatial){
-        context->sceneGraph->submitCamera(
-          true, camera.id, camera.priority,
-          camera.fov, camera.near, camera.far,
-          camera.clearColor,
-          spatial.position,
-          spatial.rotation
-        );
-      });
-
-      auto pointLightView = context->registry->view<PointLight, Spatial>();
-      pointLightView.each([this](auto &light, auto &spatial){
-        context->sceneGraph->submitPointLight(
-          light.intensity,
-          light.range,
-          spatial.position,
-          light.color
-        );
-      });
-    }
+    auto pointLightView = context->registry->view<PointLight, Spatial>();
+    pointLightView.each([this](auto &light, auto &spatial){
+      context->renderer->addPointLight(light, spatial);
+    });
+  }
 };

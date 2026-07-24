@@ -1,88 +1,24 @@
 #pragma once
 
+using Number = double;
 
 /*
-// this file abstracts away details of multi precision numbers
-// Numbers can be used just like normal numbers, with math functions and whatnot
-
 #include <boost/multiprecision/cpp_bin_float.hpp>
-#include <stdint.h>
+#include <type_traits>
 
-using Number = boost::multiprecision::cpp_bin_float_50; // probably too big
+struct Number {
+  boost::multiprecision::float128 v;
 
+  template<class T, class = std::enable_if_t<std::is_arithmetic_v<T>>;
+  Number(T x) : v(x) {}
 
-Number sin(Number x) {
-    return boost::multiprecision::sin(x);
-}
-
-Number cos(Number x) {
-    return boost::multiprecision::cos(x);
-}
-
-Number tan(Number x) {
-    return boost::multiprecision::tan(x);
-}
-
-Number sqrt(Number x) {
-    return boost::multiprecision::sqrt(x);
-}
-
-Number pow(Number a, Number b) {
-    return boost::multiprecision::pow(a, b);
+  operator boost_Number&() { return v; }
+  operator const boost_Number&() const { return v; }
 }
 */
 
 /*
-template <int F = 16>
-struct FixedPoint {
-    int64_t value;
-
-    explicit FixedPoint(int64_t intPart = 0) : value(intPart << F) {}
-    
-    explicit FixedPoint(double floatVal) {
-        value = static_cast<int16_t>(floatVal * (1 << F) + 0.5);
-    }
-
-    operator double() const {
-        return static_cast<double>(value) / (1 << F);
-    }
-
-    operator float() const {
-        return static_cast<float>(static_cast<double>(value) / (1 << F));
-    }
-
-    operator int() const {
-        return value >> F;
-    }
-
-    FixedPoint operator+(const FixedPoint& b) {
-        FixedPoint c;
-        c.value = this->value + b.value;
-        return c;
-    }
-
-    FixedPoint operator-(const FixedPoint& b) {
-        FixedPoint c;
-        c.value = this->value - b.value;
-        return c;
-    }
-
-    FixedPoint operator*(const FixedPoint& b) {
-        FixedPoint c;
-        // TODO: should cast to 128 bit for this
-        c.value = (this-value << F) * b.value;
-        return c;
-    }
-
-    FixedPoint operator/(const FixedPoint& b) {
-        FixedPoint c;
-        c.value = (this-value << F) / b.value;
-        return c;
-    }
-
-};
-*/
-
+//todo, allow -X
 template <int F = 16>
 struct FixedPoint {
     int64_t value;
@@ -158,6 +94,56 @@ struct FixedPoint {
     FixedPoint operator-(int b) const { return *this - FixedPoint(b); }
     FixedPoint operator*(int b) const { return *this * FixedPoint(b); }
     FixedPoint operator/(int b) const { return *this / FixedPoint(b); }
+
+    bool operator==(const FixedPoint& b) const { return this->value == b.value; }
+    bool operator!=(const FixedPoint& b) const { return this->value != b.value; }
+    bool operator<(const FixedPoint& b) const { return this->value < b.value; }
+    bool operator<=(const FixedPoint& b) const { return this->value <= b.value; }
+    bool operator>(const FixedPoint& b) const { return this->value > b.value; }
+    bool operator>=(const FixedPoint& b) const { return this->value >= b.value; }
+
+    // Compound assignment operators
+    FixedPoint& operator+=(const FixedPoint& b) {
+        this->value += b.value;
+        return *this;
+    }
+
+    FixedPoint& operator-=(const FixedPoint& b) {
+        this->value -= b.value;
+        return *this;
+    }
+
+    FixedPoint& operator*=(const FixedPoint& b) {
+        this->value = static_cast<int64_t>(
+            (__int128)this->value * b.value >> F
+        );
+        return *this;
+    }
+
+    FixedPoint& operator/=(const FixedPoint& b) {
+        this->value = static_cast<int64_t>(
+            ((__int128)this->value << F) / b.value
+        );
+        return *this;
+    }
+
+    // Compound assignment with double
+    FixedPoint& operator+=(double b) { return *this += FixedPoint(b); }
+    FixedPoint& operator-=(double b) { return *this -= FixedPoint(b); }
+    FixedPoint& operator*=(double b) { return *this *= FixedPoint(b); }
+    FixedPoint& operator/=(double b) { return *this /= FixedPoint(b); }
+
+    // Compound assignment with float
+    FixedPoint& operator+=(float b) { return *this += FixedPoint(b); }
+    FixedPoint& operator-=(float b) { return *this -= FixedPoint(b); }
+    FixedPoint& operator*=(float b) { return *this *= FixedPoint(b); }
+    FixedPoint& operator/=(float b) { return *this /= FixedPoint(b); }
+
+    // Compound assignment with int
+    FixedPoint& operator+=(int b) { return *this += FixedPoint(b); }
+    FixedPoint& operator-=(int b) { return *this -= FixedPoint(b); }
+    FixedPoint& operator*=(int b) { return *this *= FixedPoint(b); }
+    FixedPoint& operator/=(int b) { return *this /= FixedPoint(b); }
 };
 
 // double op FixedPoint (reverse operations)
@@ -223,6 +209,7 @@ inline FixedPoint<F> operator/(int a, const FixedPoint<F>& b) {
     return FixedPoint<F>(a) / b; 
 }
 
+
 // --- LLM WRITTEN --- 
 template <int F>
 FixedPoint<F> sqrt(FixedPoint<F> x) {
@@ -249,3 +236,4 @@ FixedPoint<F> sqrt(FixedPoint<F> x) {
 }
 
 using Number = FixedPoint<16>;
+*/

@@ -25,18 +25,18 @@ void noAbstractionTest() {
       sceneGraph->submitModel(
         resourcePool->load<Mesh>("example/models/simple_frog.stl"),
         Handle<Material>(),
-        Vector3(std::sin(i * d) * std::sqrt(i) * d, 0, std::cos(i * d) * std::sqrt(i) * d),
+        Vector3N(std::sin(i * d) * std::sqrt(i) * d, 0, std::cos(i * d) * std::sqrt(i) * d),
         Vector3F(1, 1, 1),
         eulerToQuaternion(t, t, t)
       );
     }
 
-    // int id, int priority, float fov, bool doClear, Color clearColor, Vector3 position, Vector3F scale, QuaternionF rotation
+    // int id, int priority, float fov, bool doClear, Color clearColor, Vector3N position, Vector3F scale, QuaternionF rotation
     sceneGraph->submitCamera(
       true, 0, 0,
       90.f, 0.1f, 1000.f,
       Color{0, 0, 0.2, 1.0},
-      Vector3{0, 0, 0},
+      Vector3N{0, 0, 0},
       eulerToQuaternion(0, 0, 0)
     );
     

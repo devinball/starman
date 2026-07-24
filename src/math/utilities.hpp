@@ -192,11 +192,12 @@ Matrix4x4F transformMatrix(Vector3F position, Vector3F scale, QuaternionF rotati
 }
 */
 
-Number gamma(Vector3 relativeVelocity) {
+Number gamma(Vector3N relativeVelocity) {
   Number v2 = relativeVelocity.squareMagnitude();
   return 1 / (sqrt(1 - (v2 / Constants::c2)));
 }
 
+/*
 Number lerp(Number a, Number b, Number t) {
   return a + t * (b - a);
 }
@@ -204,6 +205,7 @@ Number lerp(Number a, Number b, Number t) {
 Number lerp(Number a, Number b, float t) {
   return a + t * (b - a);
 }
+*/
 
 //float lerp(float a, float b, float t) {
 //  return a + t * (b - a);

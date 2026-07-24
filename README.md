@@ -23,6 +23,8 @@ maybe one layer could just handle timing and loops, it would call a special on u
       - Large scale object rendering
       - Atmosphere
 - Fix floating point errors for large relative positions
+- Frustrum culling
+- Bloom
 
 ## Physics
 - Gravity

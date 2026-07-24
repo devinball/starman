@@ -5,7 +5,7 @@
 
 // a simple component to represent an object in 3d space
 struct Spatial {
-    Vector3 position;
+    Vector3N position;
     Vector3F scale;
     QuaternionF rotation;
 };

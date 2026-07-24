@@ -3,7 +3,6 @@
 #include "math/vector.hpp"
 #include "math/quaternion.hpp"
 #include "math/utilities.hpp"
-#include "rendering/render_utils.hpp"
 #include "ecs/components/camera.hpp"
 #include "ecs/components/point_light.hpp"
 #include "resources/mesh.hpp"
@@ -15,13 +14,6 @@
 #include <map>
 #include <functional>
 
-template <>
-struct std::hash<std::pair<Handle<Mesh>, Handle<Material>>> {
-  std::size_t operator()(const std::pair<Handle<Mesh>, Handle<Material>>& p) const {
-    return std::hash<ResourceID>()(p.first.id) ^ (std::hash<ResourceID>()(p.second.id) << 1);
-  }
-};
-
 struct CameraData {
   bool doClear = true;
   int id = 0;
@@ -30,34 +22,20 @@ struct CameraData {
   float near = 1.f;
   float far = 10000.f;
   Color clearColor = {0, 0, 0.2, 1};
-  Vector3 position;
+  Vector3N position;
   QuaternionF rotation;
 };
 
 struct ModelData {
-  Vector3 position;
+  Vector3N position;
   Vector3F scale;
   QuaternionF rotation;
-};
-
-struct Plane {
-  Vector3F normal;
-  float distance;
-};
-
-struct Frustrum {
-  Plane top;
-  Plane bottom;
-  Plane right;
-  Plane left;
-  Plane far;
-  Plane near;
 };
 
 struct PointLightData {
   float intensity; // w/m^2
   float range; // m
-  Vector3 position;
+  Vector3N position;
   Color color;
 };
 
@@ -134,7 +112,7 @@ struct SceneGraph {
   // Mesh has many Materials has many Matrix
   //std::unordered_map<Handle<Mesh>, std::unordered_map<Handle<Material>, std::vector<Matrix4x4F>> models;
 
-  void submitCamera(bool doClear, int id, int priority, float fov, float near, float far, Color clearColor, Vector3 position, QuaternionF rotation) {
+  void submitCamera(bool doClear, int id, int priority, float fov, float near, float far, Color clearColor, Vector3N position, QuaternionF rotation) {
     cameras[id] = CameraData{
       doClear,
       id,
@@ -154,7 +132,7 @@ struct SceneGraph {
     }
   }
 
-  void submitModel(Handle<Mesh> meshHandle, Handle<Material> materialHandle, Vector3 position, Vector3F scale, QuaternionF rotation) {
+  void submitModel(Handle<Mesh> meshHandle, Handle<Material> materialHandle, Vector3N position, Vector3F scale, QuaternionF rotation) {
     //models[meshHandle][materialHandle].push_back(transform);
     models[std::pair(meshHandle, materialHandle)].push_back(ModelData{position, scale, rotation});
   }
@@ -166,7 +144,7 @@ struct SceneGraph {
     }
   }
 
-  void submitPointLight(float intensity, float range, Vector3 pos, Color color) {
+  void submitPointLight(float intensity, float range, Vector3N pos, Color color) {
     pointLights.push_back(PointLightData{intensity, range, pos, color});
   }
 
