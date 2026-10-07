@@ -55,76 +55,129 @@ struct PhysicsSystem : System {
     Number z = r * std::sin(w + f) * std::sin(i);
     
     // coordinate schenagins
-    return Vector3N(
-      x,
-      z,
-      y
+    return Vector3N(x, z, y);
+  }
+
+  Vector3N getPosition(KeplerianOrbiter keplerian, double time) {
+    double M = 2 * std::numbers::pi * time / keplerian.orbitalPeriod;
+    assert(keplerian.orbitalPeriod > 0);
+    double E = eccentric_anomaly(M, keplerian.eccentricity);
+
+    // TODO: orbits precess over time, account for this
+    Vector3N pos = keplerToCartesian(
+      E,
+      keplerian.eccentricity,
+      keplerian.semiMajorAxis,
+      keplerian.inclination,
+      keplerian.longAscendingNode,
+      keplerian.longPeriapsis
     );
+
+    if (context->registry->valid(keplerian.parent)) {
+      keplerian.barycenter = context->registry->get<Spatial>(keplerian.parent).position;
+    }
+
+    return pos + keplerian.barycenter;
   }
 
   Vector3N calcGravitationalForce(Vector3N a, Vector3N b, float mass1, float mass2) {
     Vector3N dr = b - a;
-    Number d2 = dr.squareMagnitude();
-    if (d2 > 1) {
-      Number magnitude = 6.6743015e-11 * mass1 * mass2 / d2;
-      return dr.normalized() * magnitude;
+    Number d2 = dr.squareMagnitude() + 1;  
+    Number magnitude = 6.6743015e-11 * mass1 * mass2 / d2;
+    return dr.normalized() * magnitude;
+  }
+
+// calc forces here
+// maybe i just pass in a list of forces, which i then sum up here?
+// but how does it know when all of those forces should be applied?
+// maybe it could be like how the keplerians work? but that doesn't
+// make a ton of sense for a rocket burn.
+// ok, so normally i would model a rocket burn by 1. applying a force to the object
+// and 2. reducing the mass of it (by the appropriate amount).
+// maybe i keep a list of rocket burns, these contain the direction, the duration
+// start time, end time, engine efficiency, mass flow rate, thrust etc.
+// i probably need to add mass + moment inertia to state, so at this point state will
+// just be what Rigidbody used to be. so i guess rigidbody just contains trajectroies,
+    // as well as the current, interpolated, state.
+  State integrateState(State& state, double dt) {
+    State newState = state;
+    newState.time += dt;
+
+    newState.position = state.position + state.velocity * dt + state.acceleration * (dt * dt) * 0.5;
+
+    Vector3N netForce;
+
+    auto keplerians = context->registry->view<KeplerianOrbiter>();  
+
+    keplerians.each([&](auto &keplerian){
+      Vector3N pos = getPosition(keplerian, state.time);
+      netForce += calcGravitationalForce(newState.position, pos, newState.mass, keplerian.mass);
+    });
+
+    newState.acceleration = netForce / newState.mass;
+    newState.velocity = state.velocity + (state.acceleration + newState.acceleration) * (dt * 0.5);
+
+    return newState;
+  }
+
+  State integrateIter(State state, double dt, int numSteps) {
+    // collisions could just be a manuver with a short duration and 100% reliability
+   // this could be run on a seperate thread, even a seperate thread for each trajectory
+    for (int step = 0; step < numSteps; ++step) {
+      // ensure that the dt passed into this is the one actually used
+      state = integrateState(state, dt);
     }
-    return {0, 0, 0};
+    
+    return state;
   }
 
   void init() {
-    auto spatials = context->registry->view<Rigidbody, Spatial>();
+    
+    auto rigidbodies = context->registry->view<Rigidbody, Spatial>();
 
-    spatials.each([&](auto &rigidbody, auto &spatial){
-      rigidbody.position = spatial.position;
-      rigidbody.rotation = spatial.rotation;
-
-      rigidbody.velocity = {0, 0, 10000};
+    rigidbodies.each([&](auto &rigidbody, auto &spatial){
+      rigidbody.currentState = State(
+        0, 1000, 1000,
+        spatial.position, Vector3N{0, 0, 30e4}, Vector3N{0, 0, 0},
+        spatial.rotation
+      );
     });
+
+    double dt = 0.1;
+    rigidbodies.each([&](auto &rigidbody, auto &spatial){
+      State state = rigidbody.currentState;
+      for (int i = 0; i < 500; ++i) {
+        //printf("%f %f %f\n", state.position.x, state.position.y, state.position.z);
+        rigidbody.future.push(state);
+        state = integrateIter(state, dt, 10000);
+      }
+    });
+
+    // maybe what i do is just allow any function that has the right signature
+    // so just some function r(double time) -> Vector3N
   }
 
-  // this allows me to interpolate, so the physics engine can
-  // have it's own position kept precisely, and the renderer
-  // can see interpolated motion.
-
-  // we want to be able to set position via the spatial
-  // rigidbody.position is physics internal only
-  // it should probably detect if spatial.position has been
-  // externaly changed, and update rigidbody.position to track
   void draw() {
+    // this allows me to interpolate, so the physics engine can
+    // have it's own position kept precisely, and the renderer
+    // can see interpolated motion.
+    // we want to be able to set position via the spatial
+    // rigidbody.position is physics internal only
+    // it should probably detect if spatial.position has been
+    // externaly changed, and update rigidbody.position to track
     ImGui::SliderInt("Time Exp", &timeExp, 0, 10/*3600 * 24 * 365*/);
 
     auto spatials = context->registry->view<Rigidbody, Spatial>();
 
     spatials.each([&](auto &rigidbody, auto &spatial){
-      spatial.position = rigidbody.position;
-      spatial.rotation = rigidbody.rotation;
+      spatial.position = rigidbody.currentState.position;
+      spatial.rotation = rigidbody.currentState.rotation;
     });
 
     auto keplerians = context->registry->view<KeplerianOrbiter, Spatial>();  
 
-    keplerians.each([this](auto &keplerian, auto &spatial) {
-      double M = 2 * std::numbers::pi * t / keplerian.orbitalPeriod;
-      assert(keplerian.orbitalPeriod > 0);
-      double E = eccentric_anomaly(M, keplerian.eccentricity);
-
-      // TODO: orbits precess over time, account for this
-      Vector3N pos = keplerToCartesian(
-        E,
-        keplerian.eccentricity,
-        keplerian.semiMajorAxis,
-        keplerian.inclination,
-        keplerian.longAscendingNode,
-        keplerian.longPeriapsis
-      );
-
-      //printf("%f %f %f %f %f %f %f\n", float(keplerian.orbitalPeriod), float(t), float(E), float(M), float(pos.x), float(pos.y),  float(pos.z));
-
-      if (context->registry->valid(keplerian.parent)) {
-        keplerian.barycenter = context->registry->get<Spatial>(keplerian.parent).position;
-      }
-
-      spatial.position = pos + keplerian.barycenter;
+    keplerians.each([&](auto &keplerian, auto &spatial) {
+      spatial.position = getPosition(keplerian, t);
     });
   }
 
@@ -134,60 +187,51 @@ struct PhysicsSystem : System {
     auto rigidbodies = context->registry->view<Rigidbody>();
     auto keplerians = context->registry->view<KeplerianOrbiter, Spatial>();
 
-    rigidbodies.each([&](auto &rigidbody){
+    rigidbodies.each([this](auto &rigidbody){
+
+      // the basic idea is that i need to update something's position here
+      // basically spatial.position = rigidbody.currentState.position;
+      // so right here maybe i update currentState and nextState
+      // i interpolate between them in the draw() function
+      // so first i need to determine the SOI
+      // its possible that this approach may not work, in which
+      // case it may be a good idea to have an SOI range (calculated or defined)
+      // then it just chooses the smallest one that it is within
+
+      CelestialBody dominant;
+      double maxForce = 0;
+      for (auto celestialBody : celestialBodies) {
+        // it's okay to use square magnitude here because we are just comparing
+        // positive values, and if a > b, a > 0, b > 0, then a^2 > b^2
+        force = calcGravitationalForce().squareMagnitude();
+        if (force > maxForce) {
+          dominant = celestialBody;
+        } 
+      }
+
+      // we then use the dominant body as our SOI, and calculate traditional kepler orbits
+      // this does mean that our keplerian orbit function needs to work with ALL trajectories
+      // this includse parabolic and hyperbolic.
+
+      // i probably need to switch based on eccentricity.
+      // e = 0 = circular
+      // e < 1 = elipse
+      // e = 1 = parabola
+      // e > 1 = hyperbola
+
+
+      
       /*
-      // implicit euler, need to swap with velocity-verlet, or some other better energy-preserving integrator
       rigidbody.angularMomentum += rigidbody.netTorque * context->dt;
       rigidbody.angularVelocity = rigidbody.angularMomentum * (1 / rigidbody.momentInertia); // TODO : multiply by inverse momentInteria matrix instead
       rigidbody.rotation += rigidbody.rotation * rigidbody.angularVelocity * 0.5f * context->dt;
       rigidbody.rotation = rigidbody.rotation.normalized();
-
-      rigidbody.linearMomentum += rigidbody.netForce * context->dt;
-      rigidbody.linearVelocity = (rigidbody.linearMomentum * (1 / rigidbody.mass));
-      rigidbody.position += toVector3N(rigidbody.linearVelocity) * context->dt;
       */
-
-      // REALLY REALLY weird sudden forces
-
-      // ok, so sometimes a very large negative number is passed to Number sqrt()
-      // so somewhere, somehow x*x + y*y + z*z < 0
-      // this doesn't make any sense, should only be possible if there are complex numbers
-      // so somewhere, multiplication is being done wrong
-      // !! what if it's integer overflow!!
-      // a * b > max(int), so it wraps into being very small
-      // ok then, but why then would (p1 - p2).magnitude()
-      // suddenly be absurdly large, distance should vary pretty continously
-      // ok, i need to test the number class rigorously
-      // then patch any issues
 
       //double energy = 0.5 * rigidbody.mass * rigidbody.velocity.magnitude() + 6743015e-11 * rigidbody.mass * 1989100e24 / rigidbody.position.magnitude();
       //printf("Total energy: %f EJ | Speed: %f KM/S | Distance: %f MM \n", energy * 1e-18, rigidbody.velocity.magnitude() * 1e-3, rigidbody.position.magnitude() * 1e-6);
 
       /*
-      Number x = rigidbody.position.x;
-      Number y = rigidbody.position.y;
-      Number z = rigidbody.position.z;
-      Number x2 = x * x;
-      Number y2 = y * y;
-      Number z2 = z * z;
-      Number r = x + y + z;
-      Number r2 = x2 + y2 + z2;
-
-      printf("%f %f %f %f %f %f %f %f\n",
-        double(x),
-        double(y),
-        double(z),
-        double(x2),
-        double(y2),
-        double(z2),
-        double(r),
-        double(r2)
-      );
-      */
-
-      // WHEN INTERACTIONS ARE MORE COMPLEX MORE STEPS ARE NEEDED, THIS IS LIKELY TO OCCUR WHEN THE BODY IS CLOSER
-      // TO IT'S PERIAPSIS, OR WHEN IT IS CLOSE TO MANY BODIES
-      // janky substepping, maybe this is the solution to variable dt?
       const int numSteps = std::min(pow(10, timeExp), 1e2);
       for (int step = 0; step < numSteps; ++step) {
         double dt = context->dt * pow(10, timeExp) / numSteps;
@@ -212,6 +256,7 @@ struct PhysicsSystem : System {
         rigidbody.netForce = Vector3N{0, 0, 0};
         rigidbody.netTorque = Vector3N{0, 0, 0};
       }
+        */
     });
   }
 };

@@ -152,7 +152,7 @@ struct SceneManager {
       Handle<Material> material = context->resourceManager->load<Material>("example/materials/fabric.yaml");
       context->registry->emplace<MeshRenderer>(e, mesh, material);
       context->registry->emplace<Spatial>(e, position, Vector3F{1, 1, 1}, QuaternionF());
-      context->registry->emplace<Rigidbody>(e, 10000, 1000);
+      context->registry->emplace<Rigidbody>(e);
       context->registry->emplace<Icon>(e, Color(randomF(), randomF(), randomF(), 1.0f));
       context->registry->emplace<Tag>(e, "International Space Station");
 
@@ -173,9 +173,12 @@ struct SceneManager {
       //fpc2();
       solSystem();
 
-      for (int i = 0; i < 100; ++i) {
-        createRigidbody({(i+5) * 1e10, 0, 0});
+      createRigidbody({15e10, 0, 0});
+      /*
+      for (int i = 0; i < 10; ++i) {
+        createRigidbody({(i+15) * 1e10, 0, 0});
       }
+      */
 
       //createLight({0, 0, 0});
 

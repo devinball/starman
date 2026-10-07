@@ -105,3 +105,15 @@ solar_system:
         longitudePeriapsis: 46.68158724
         longitudeAscendingNode: 131.78635853
         orbits: barycenter
+
+
+# It should use ICRF and J.2000
+# a system orbits around it's barycenter
+# a barycenter can be a keplerian orbit itself, systems can also be nested
+# for example, the jovian system's barycenter orbits the solar system's barycenter
+# bary center + kepler orbits is certainly not perfect, especially if orbital precession
+# or time dilalation matter, but it should be good enough.
+# or maybe for simplicity we don't do nesting, but just add an orbits parameter
+solar_system:
+    barycenter: [0, 0, 0]
+    orbits: [0, 0, 0] # takes the name of another system or a vector

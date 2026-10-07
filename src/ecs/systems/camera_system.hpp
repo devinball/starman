@@ -41,7 +41,7 @@ struct CameraSystem : System {
       t += context->frameTime;
 
       auto view = context->registry->view<CameraController, Spatial>();
-      
+
       view.each([&](auto &cameraController, auto &spatial){
         Vector3N direction({
           (int)context->inputBuffer->right - (int)context->inputBuffer->left,

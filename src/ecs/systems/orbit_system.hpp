@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ecs/system.hpp"
-#include "ecs/components/keplerian_orbiter.hpp"
+#include "ecs/components/orbiter.hpp"
 #include "ecs/components/spatial.hpp"
 
 #include "imgui.h"
@@ -19,15 +19,18 @@ struct KeplerianOrbitSystem : System {
       double s = std::cbrt(-q/2 - k) + std::cbrt(-q/2 + k);
       return n*std::asin(s);
     }
-
-
-
-  public:
-    
-
-    
   
     void update() {
-      
+      // SOIs are determined by celestial body objects
+
+      sphereOfInfluenceRadius = a * pow(m / M, 2/5);
+
+      auto orbiterView = context->registry->view<Orbiter, Spatial>();
+      orbiterView.each([this](auto &orbiter, auto &spatial){
+        spatial.position = orbiter.trajectory.position(context->simTime);
+        // potentially use orbiter.trajectory.velocity(context->simTime);
+        // in order to interpolate between frames
+
+      });
     }
 };

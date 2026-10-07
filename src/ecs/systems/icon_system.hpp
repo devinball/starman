@@ -9,6 +9,8 @@
 
 #include "core/input_buffer.hpp"
 
+#include "math/utilities.hpp"
+
 #include <math.h>
 
 #include "imgui.h"
@@ -100,25 +102,34 @@ Vector2F worldToScreen(const Vector3N& worldPosition, const Camera& camera, cons
 struct IconSystem : System {
   int count;
 
-  void update() {
-    auto icons = context->registry->view<Icon, Spatial>();
-
-    icons.each([&](auto &icon, auto &spatial){
-      icon.trajectory.push_back(spatial.position);
-    });
-  }
-
   void draw() {
     if (!context->inputBuffer->tab) { return; }
 
     auto cameras = context->registry->view<Camera, Spatial>();
     auto icons = context->registry->view<Icon, Spatial>();
+    auto rigidbodies = context->registry->view<Rigidbody>();
+
+    Vector2I size = context->renderer->getSize();
 
     cameras.each([&](auto &camera, auto &camSpatial){
-      icons.each([&](auto &icon, auto &spatial){
-        Vector2I size = context->renderer->getSize();
+      rigidbodies.each([&](auto &rigidbody){
+      std::vector<ImVec2> points;
+      for (auto state : rigidbody.future.states) {
+        Vector2F pos = worldToScreen(state.position, camera, camSpatial, size.x, size.y);
+          if (pos != Vector2F{0, 0}) {
+            points.push_back({pos.x, pos.y});
+          }
+        }
 
-        /*
+        ImGui::GetBackgroundDrawList()->AddPolyline(points.data(), (int)points.size(), IM_COL32(
+          int(255),
+          int(255),
+          int(255),
+          int(255)
+        ), 2.f);
+      });
+
+      icons.each([&](auto &icon, auto &spatial){
         std::vector<ImVec2> points;
         for (auto pos3 : icon.trajectory) {
           Vector2F pos = worldToScreen(pos3, camera, camSpatial, size.x, size.y);
@@ -133,7 +144,6 @@ struct IconSystem : System {
           int(icon.color.b * 255),
           int(icon.color.a * 255)
         ), 2.f);
-        */
 
         Vector2F pos = worldToScreen(spatial.position, camera, camSpatial, size.x, size.y);
         if (pos != Vector2F{0, 0}) {
