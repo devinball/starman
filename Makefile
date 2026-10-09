@@ -2,8 +2,8 @@
 #export PATH := $(shell nix-shell shell.nix)
 
 run:
-	cmake -B build # > build.log
-	cmake --build build # >> build.log 2>&1
+	cmake -B build >> build.log 2>&1
+	cmake --build build >> build.log 2>&1
 	nvidia-offload ./build/example
 
 execute:

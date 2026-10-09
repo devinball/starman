@@ -7,5 +7,7 @@
 // probably don't need that complex tho
 
 struct CelestialBody {
-  float mass;
+  double mass;
+  double gravitationalParameter;
+  double soiRadius;
 };

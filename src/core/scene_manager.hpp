@@ -8,9 +8,9 @@
 #include "math/utilities.hpp"
 
 #include "ecs/systems/render_system.hpp"
-#include "ecs/systems/physics_system.hpp"
+#include "ecs/systems/orbit_system.hpp"
 #include "ecs/systems/camera_system.hpp"
-#include "ecs/systems/keplerian_orbit_system.hpp"
+#include "ecs/systems/orbit_system.hpp"
 #include "ecs/systems/icon_system.hpp"
 
 #include "ecs/components/spatial.hpp"
@@ -18,7 +18,7 @@
 #include "ecs/components/rigidbody.hpp"
 #include "ecs/components/camera.hpp"
 #include "ecs/components/camera_controller.hpp"
-#include "ecs/components/keplerian_orbiter.hpp"
+#include "ecs/components/orbiter.hpp"
 #include "ecs/components/icon.hpp"
 #include "ecs/components/tag.hpp"
 
@@ -45,7 +45,7 @@ struct SceneManager {
   public:
     std::shared_ptr<Context> context;
 
-    Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, double centerMass, Entity parent) {
+    Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
       Entity entity = context->registry->create();
       context->registry->emplace<Spatial>(entity, Vector3N{0, 0, 0}, Vector3F{float(radius), float(radius), float(radius)}, eulerToQuaternion(180, 0, 0));
       Handle<Mesh> mesh = context->resourceManager->load<Mesh>("example/models/uv_sphere.obj");
@@ -57,13 +57,43 @@ struct SceneManager {
 
       //printf("%s %f \n", material.c_str(), orbPer / 3600);
 
-      Vector3N bary = Vector3N(0, 0, 0);
-      context->registry->emplace<KeplerianOrbiter>(entity, mass, eccentricity, semiMajorAxis, radians(incl), radians(longAsN), radians(argPeri), radians(longPeri), orbPer, bary, parent);
+      // mass, eccentricity, semiMajorAxis, radians(incl), radians(longAsN), radians(argPeri), radians(longPeri), orbPer, bary, parent
+      double systemMass = parent == entt::null ? mass : context->registry->get<CelestialBody>(parent).mass + mass; // yeah, sure?
+      double sphereOfInfluenceRadius = semiMajorAxis * pow(mass / systemMass, 0.4);
+      Trajectory trajectory = Trajectory{{0, KeplerianOrbit{
+        eccentricity,
+        semiMajorAxis * (1 - pow(eccentricity, 2)),
+        incl,
+        longAsN,
+        argPeri,
+        0,
+        parent
+        //parent == entt::null ? std::optional<SphereOfInfluence>{} : std::optional<SphereOfInfluence>{std::make_pair(std::make_shared<Orbiter>(context->registry->get<Orbiter>(parent)), std::make_shared<CelestialBody>(context->registry->get<CelestialBody>(parent)))}
+      }}};
+
+      context->registry->emplace<CelestialBody>(entity, mass, mass * Constants::G, sphereOfInfluenceRadius);
+      context->registry->emplace<Orbiter>(entity, trajectory);
       context->registry->emplace<Icon>(entity, Color(randomF(), randomF(), randomF(), 1.0f));
       context->registry->emplace<Tag>(entity, name);
 
       return entity;
     }
+    
+
+    /*
+    Entity createOrbiter() {
+      Entity e = context->registry->create();
+      Handle<Mesh> mesh = context->resourceManager->load<Mesh>("example/models/iss.obj");
+      Handle<Material> material = context->resourceManager->load<Material>("example/materials/fabric.yaml");
+      context->registry->emplace<MeshRenderer>(e, mesh, material);
+      context->registry->emplace<Spatial>(e, Vector3N{1e11, 1, 1}, Vector3F{1, 1, 1}, QuaternionF());
+      context->registry->emplace<Icon>(e, Color(randomF(), randomF(), randomF(), 1.0f));
+      context->registry->emplace<Tag>(e, "International Space Station");
+
+      Vector3N velocity = Vector3N(1e4, 0, 0);
+      context->registry->emplace<Orbiter>(e, velocity, Trajectory{});
+    }
+    */
 
     void createLight(Vector3N pos) {
       Entity entity = context->registry->create();
@@ -74,44 +104,7 @@ struct SceneManager {
       // r = 200e24
     }
 
-    /*
-    void loadSolarSystem(const std::string path) {
-      YAML::Node system = YAML::LoadFile("example/scenes/simple.yaml");
-
-      Vector3N barycenter = system['solar_system']['barycenter'];
-
-      for (auto body : system['solar_system']['bodies']) {
-        std::string name = body['name'];
-        std::string material = body['material'];
-        double radius = body['radius'];
-        double mass = body['mass'];
-        double semiMajorAxis = body['semiMajorAxis'];
-        double eccentricity = body['eccentricity'];
-        double inclination = body['inclination'];
-        double longitudePeriapsis = body['longitudePeriapsis'];
-        double longitudeAscendingNode = body['longitudeAscendingNode'];
-        std::string orbits = body['orbits'];
-
-        Entity parent;
-        if (orbits == "barycenter") {a
-          parent = Entt::
-        }
-
-        createPlanet(material,
-          name,
-          radius,
-          mass,
-          semiMajorAxis,
-          eccentricity,
-          inclination,
-          longitudePeriapsis,
-          longitudeAscendingNode,
-          mass of system, entity that is being orbited
-        );
-      }
-    }
-    */
-
+    
     void solSystem() {
       createLight({ 0, 0, 0});
       //createLight({ 5e14, 0, 0});
@@ -135,29 +128,7 @@ struct SceneManager {
       //createPlanet("example/materials/planets/sun.yaml", 717000, 3100e18, e9 * 1e3, ); // makemake
       //createPlanet("example/materials/planets/sun.yaml", 870000, 4006e18, e9 * 1e3, ); // haumea
     }
-
-    void frog(int num) {
-      for (int i = 0; i < num; i++) {
-        Entity entity = context->registry->create();
-        context->registry->emplace<Spatial>(entity, Vector3N{randomF() * 100, randomF() * 100, randomF() * 100}, Vector3F{10, 10, 10}, eulerToQuaternion(180, 0, 0));
-        Handle<Mesh> mesh = context->resourceManager->load<Mesh>("example/models/simple_frog.obj");
-        Handle<Material> mat = context->resourceManager->load<Material>("example/materials/fabric.yaml");
-        context->registry->emplace<MeshRenderer>(entity, mesh, mat);
-      }
-    }
-
-    Entity createRigidbody(Vector3N position) {
-      Entity e = context->registry->create();
-      Handle<Mesh> mesh = context->resourceManager->load<Mesh>("example/models/iss.obj");
-      Handle<Material> material = context->resourceManager->load<Material>("example/materials/fabric.yaml");
-      context->registry->emplace<MeshRenderer>(e, mesh, material);
-      context->registry->emplace<Spatial>(e, position, Vector3F{1, 1, 1}, QuaternionF());
-      context->registry->emplace<Rigidbody>(e);
-      context->registry->emplace<Icon>(e, Color(randomF(), randomF(), randomF(), 1.0f));
-      context->registry->emplace<Tag>(e, "International Space Station");
-
-      return e;
-    }
+    
 
     void fpsCam() {
       Entity camera = context->registry->create();
@@ -167,23 +138,13 @@ struct SceneManager {
     }
 
     void init() {
-      YAML::Node config = YAML::LoadFile("example/scenes/simple.yaml");
+      //YAML::Node config = YAML::LoadFile("example/scenes/simple.yaml");
 
       fpsCam();
-      //fpc2();
       solSystem();
 
-      createRigidbody({15e10, 0, 0});
-      /*
-      for (int i = 0; i < 10; ++i) {
-        createRigidbody({(i+15) * 1e10, 0, 0});
-      }
-      */
-
-      //createLight({0, 0, 0});
-
       addSystem<RenderSystem>();
-      addSystem<PhysicsSystem>();
+      addSystem<OrbitSystem>();
       addSystem<CameraSystem>();
       addSystem<IconSystem>();
 

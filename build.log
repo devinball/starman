@@ -1,0 +1,253 @@
+[33mCMake Warning (dev) at CMakeLists.txt:67 (find_package):
+  Policy CMP0167 is not set: The FindBoost module is removed.  Run "cmake
+  --help-policy CMP0167" for policy details.  Use the cmake_policy command to
+  set the policy and suppress this warning.
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+[0m
+-- CPM: Adding package stb@ (master at /home/devin/Projects/Software/Games/starman/.cpm-cache/stb/2e4000b6b0706de128d011917ff8fc1642d976a4)
+-- CPM: Adding package imgui@1.92.8 (v1.92.8 at /home/devin/Projects/Software/Games/starman/.cpm-cache/imgui/28bbb7239d066928f849fa1fc666efda6444c3db)
+-- CPM: Adding package reflectcpp@0.25.0 (v0.25.0 at /home/devin/Projects/Software/Games/starman/.cpm-cache/reflectcpp/4fc4df95aeb1bf1a511ada6c4d669ad8a6c9090a)
+-- Configuring done (0.5s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/devin/User/Projects/Software/Games/starman/build
+make[1]: Entering directory '/home/devin/User/Projects/Software/Games/starman/build'
+[  4%] Built target glad_generate
+[ 31%] Built target imgui_lib
+[ 45%] Built target imgui_backend
+[ 72%] Built target reflectcpp
+[ 77%] [32mBuilding CXX object CMakeFiles/engine.dir/empty.cpp.o[0m
+[ 81%] [1m[32mLinking CXX static library libengine.a[0m
+[ 86%] Built target engine
+[ 90%] [32mBuilding CXX object CMakeFiles/example.dir/example/main.cpp.o[0m
+In file included from /home/devin/User/Projects/Software/Games/starman/src/core/application.hpp:6,
+                 from /home/devin/User/Projects/Software/Games/starman/example/main.cpp:1:
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp: In member function ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’:
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:56:102: error: ‘centerMass’ was not declared in this scope
+   56 |       double orbPer = sqrt((pow(semiMajorAxis, 3) * 4 * pow(std::numbers::pi, 2)) / (6.6743015e-11 * centerMass));
+      |                                                                                                      ^~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:62:40: error: ‘a’ was not declared in this scope
+   62 |       double sphereOfInfluenceRadius = a * pow(mass / systemMass, 0.4);
+      |                                        ^
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:72:7: error: expected ‘,’ or ‘;’ before ‘context’
+   72 |       context->registry->emplace<CelestialBody>(entity, mass, mass * Constants::G, sphereOfInfluenceRadius);
+      |       ^~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp: In member function ‘void SceneManager::solSystem()’:
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:111:32: error: no matching function for call to ‘SceneManager::createPlanet(const char [35], const char [4], int, double, double, double, int, int, int, double, const entt::null_t&)’
+  111 |       Entity sun = createPlanet("example/materials/planets/sun.yaml", "sun", 696000000, 1.988416e30, 0.1, 0.1, 0, 0, 0, 1.988416e30, entt::null); // sun
+      |                    ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note: candidate: ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’
+   48 |     Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
+      |            ^~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note:   candidate expects 10 arguments, 11 provided
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:113:19: error: no matching function for call to ‘SceneManager::createPlanet(const char [38], const char [7], int, double, double, double, double, double, double, double, Entity&)’
+  113 |       createPlanet("example/materials/planets/mecury.yaml", "mecury", 2440530, 0.330103e24, 5.79091e7 * 1e3, 0.2000000564, 7.00559432, 77.45771895, 48.33961819, 1.988416e30, sun); // mecury
+      |       ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note: candidate: ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’
+   48 |     Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
+      |            ^~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note:   candidate expects 10 arguments, 11 provided
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:114:19: error: no matching function for call to ‘SceneManager::createPlanet(const char [37], const char [6], int, double, double, double, double, double, double, double, Entity&)’
+  114 |       createPlanet("example/materials/planets/venus.yaml", "venus", 6051800, 4.86731e24, 1.08209e8 * 1e3, 0.00676, 3.39777545, 131.76755713, 76.67261496, 1.988416e30, sun); // venus
+      |       ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note: candidate: ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’
+   48 |     Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
+      |            ^~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note:   candidate expects 10 arguments, 11 provided
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:115:34: error: no matching function for call to ‘SceneManager::createPlanet(const char [37], const char [6], int, double, double, double, double, double, double, double, Entity&)’
+  115 |       Entity earth = createPlanet("example/materials/planets/earth.yaml", "earth", 6378137, 5.97217e24, 1.49598e8 * 1e3, 0.01670, -0.00054346, 102.93005885, -5.11260389, 1.988416e30, sun); // earth
+      |                      ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note: candidate: ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’
+   48 |     Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
+      |            ^~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note:   candidate expects 10 arguments, 11 provided
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:116:21: error: no matching function for call to ‘SceneManager::createPlanet(const char [36], const char [5], int, double, double, double, int, int, int, double, Entity&)’
+  116 |         createPlanet("example/materials/planets/moon.yaml", "moon", 1737400, 7.346e22, 3.83398e5 * 1e3, 0.05555, 0, 0, 0, 5.97217e24, earth); // moon
+      |         ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note: candidate: ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’
+   48 |     Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
+      |            ^~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note:   candidate expects 10 arguments, 11 provided
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:117:19: error: no matching function for call to ‘SceneManager::createPlanet(const char [36], const char [5], int, double, double, double, double, double, double, double, Entity&)’
+  117 |       createPlanet("example/materials/planets/mars.yaml", "mars", 3396190, 0.641691e24, 2.27939e8 * 1e3, 0.09342, 1.85181869, -23.91744784, 49.71320984, 1.988416e30, sun); // mars
+      |       ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note: candidate: ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’
+   48 |     Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
+      |            ^~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note:   candidate expects 10 arguments, 11 provided
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:118:19: error: no matching function for call to ‘SceneManager::createPlanet(const char [39], const char [8], int, double, double, double, double, double, double, double, Entity&)’
+  118 |       createPlanet("example/materials/planets/jupiter.yaml", "jupiter", 71492000, 1898.125e24, 7.78321e8 * 1e3, 0.04846, 1.29861416, 14.27495244, 100.29282654, 1.988416e30, sun); // jupiter
+      |       ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note: candidate: ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’
+   48 |     Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
+      |            ^~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note:   candidate expects 10 arguments, 11 provided
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:119:19: error: no matching function for call to ‘SceneManager::createPlanet(const char [38], const char [7], int, double, double, double, double, double, double, double, Entity&)’
+  119 |       createPlanet("example/materials/planets/saturn.yaml", "saturn", 60268000, 568.317e24, 1.4291e9 * 1e3, 0.05468, 2.49424102, 92.86136063, 113.63998702, 1.988416e30, sun); // saturn
+      |       ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note: candidate: ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’
+   48 |     Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
+      |            ^~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note:   candidate expects 10 arguments, 11 provided
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:120:19: error: no matching function for call to ‘SceneManager::createPlanet(const char [38], const char [7], int, double, double, double, double, double, double, double, Entity&)’
+  120 |       createPlanet("example/materials/planets/uranus.yaml", "uranus", 25559000, 86.8099e24, 2.87479e9 * 1e3, 0.04739, 0.77298127 , 172.43404441, 73.96250215, 1.988416e30, sun); // uranus
+      |       ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note: candidate: ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’
+   48 |     Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
+      |            ^~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note:   candidate expects 10 arguments, 11 provided
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:121:19: error: no matching function for call to ‘SceneManager::createPlanet(const char [39], const char [8], int, double, double, double, double, double, double, double, Entity&)’
+  121 |       createPlanet("example/materials/planets/neptune.yaml", "neptune", 24764000, 102.4092e24, 4.50489e9 * 1e3, 0.00911, 1.77005520, 46.68158724, 131.78635853, 1.988416e30, sun); // neptune
+      |       ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note: candidate: ‘Entity SceneManager::createPlanet(std::string, std::string, double, double, double, float, float, float, float, Entity)’
+   48 |     Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longPeri, float longNode, Entity parent) {
+      |            ^~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:48:12: note:   candidate expects 10 arguments, 11 provided
+In file included from /nix/store/95yr8f0mv9rhqwn1yqylw0hs4wvfxl8h-entt-3.14.0/include/entt/entity/helper.hpp:12,
+                 from /nix/store/95yr8f0mv9rhqwn1yqylw0hs4wvfxl8h-entt-3.14.0/include/entt/entt.hpp:29,
+                 from /home/devin/User/Projects/Software/Games/starman/src/ecs/ecs.hpp:3,
+                 from /home/devin/User/Projects/Software/Games/starman/src/core/context.hpp:3,
+                 from /home/devin/User/Projects/Software/Games/starman/src/core/application.hpp:3:
+/nix/store/95yr8f0mv9rhqwn1yqylw0hs4wvfxl8h-entt-3.14.0/include/entt/entity/storage.hpp: In instantiation of ‘entt::basic_storage<Type, <template-parameter-1-2>, <template-parameter-1-3>, <template-parameter-1-4> >::value_type& entt::basic_storage<Type, <template-parameter-1-2>, <template-parameter-1-3>, <template-parameter-1-4> >::emplace(entity_type, Args&& ...) [with Args = {std::vector<std::pair<double, std::variant<KeplerianOrbit> >, std::allocator<std::pair<double, std::variant<KeplerianOrbit> > > >&}; Type = Orbiter; Entity = entt::entity; Allocator = std::allocator<Orbiter>; <template-parameter-1-4> = void; value_type = Orbiter; entity_type = entt::entity]’:
+/nix/store/95yr8f0mv9rhqwn1yqylw0hs4wvfxl8h-entt-3.14.0/include/entt/entity/mixin.hpp:331:37:   required from ‘std::conditional_t<((bool)is_same_v<typename Type::element_type, typename Type::entity_type>), typename Type::entity_type, decltype (declval<Type>().get(<brace-enclosed initializer list>()))> entt::basic_sigh_mixin< <template-parameter-1-1>, <template-parameter-1-2> >::emplace(entity_type, Args&& ...) [with Args = {std::vector<std::pair<double, std::variant<KeplerianOrbit> >, std::allocator<std::pair<double, std::variant<KeplerianOrbit> > > >&}; Type = entt::basic_storage<Orbiter, entt::entity, std::allocator<Orbiter>, void>; Registry = entt::basic_registry<>; std::conditional_t<((bool)is_same_v<typename Type::element_type, typename Type::entity_type>), typename Type::entity_type, decltype (declval<Type>().get(<brace-enclosed initializer list>()))> = Orbiter&; typename Type::element_type = Orbiter; typename Type::entity_type = entt::entity; decltype (declval<Type>().get(<brace-enclosed initializer list>())) = Orbiter&; entity_type = entt::entity]’
+  331 |             underlying_type::emplace(hint, std::forward<Args>(args)...);
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/nix/store/95yr8f0mv9rhqwn1yqylw0hs4wvfxl8h-entt-3.14.0/include/entt/entity/registry.hpp:606:38:   required from ‘decltype(auto) entt::basic_registry<Entity, <template-parameter-1-2> >::emplace(entity_type, Args&& ...) [with Type = Orbiter; Args = {std::vector<std::pair<double, std::variant<KeplerianOrbit> >, std::allocator<std::pair<double, std::variant<KeplerianOrbit> > > >&}; Entity = entt::entity; Allocator = std::allocator<entt::entity>; entity_type = entt::entity]’
+  606 |         return assure<Type>().emplace(entt, std::forward<Args>(args)...);
+      |                ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:73:42:   required from here
+   73 |       context->registry->emplace<Orbiter>(entity, trajectory);
+      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
+/nix/store/95yr8f0mv9rhqwn1yqylw0hs4wvfxl8h-entt-3.14.0/include/entt/entity/storage.hpp:677:44: error: cannot convert ‘std::vector<std::pair<double, std::variant<KeplerianOrbit> > >’ to ‘double’ in initialization
+  677 |             const auto it = emplace_element(entt, false, Type{std::forward<Args>(args)...});
+      |                             ~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/devin/User/Projects/Software/Games/starman/src/core/scene_manager.hpp:12:
+/home/devin/User/Projects/Software/Games/starman/src/ecs/systems/camera_system.hpp: In instantiation of ‘CameraSystem::draw()::<lambda(auto:835&, auto:836&)> [with auto:835 = CameraController; auto:836 = Spatial]’:
+/nix/store/l1475xlcrjw3q97yagnlrpj5bw1xwc7p-gcc-14.4.0/include/c++/14.4.0/type_traits:2655:26:   required by substitution of ‘template<class _Fn, class ... _Args> static std::__result_of_success<decltype (declval<_Fn>()((declval<_Args>)()...)), std::__invoke_other> std::__result_of_other_impl::_S_test(int) [with _Fn = CameraSystem::draw()::<lambda(auto:835&, auto:836&)>&; _Args = {CameraController&, Spatial&}]’
+ 2655 |       std::declval<_Fn>()(std::declval<_Args>()...)
+      |       ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~
+/nix/store/l1475xlcrjw3q97yagnlrpj5bw1xwc7p-gcc-14.4.0/include/c++/14.4.0/type_traits:2666:60:   required from ‘struct std::__result_of_impl<false, false, CameraSystem::draw()::<lambda(auto:835&, auto:836&)>&, CameraController&, Spatial&>’
+ 2666 |       using type = decltype(_S_test<_Functor, _ArgTypes...>(0));
+      |                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/nix/store/l1475xlcrjw3q97yagnlrpj5bw1xwc7p-gcc-14.4.0/include/c++/14.4.0/type_traits:2671:12:   required from ‘struct std::__invoke_result<CameraSystem::draw()::<lambda(auto:835&, auto:836&)>&, CameraController&, Spatial&>’
+ 2671 |     struct __invoke_result
+      |            ^~~~~~~~~~~~~~~
+/nix/store/l1475xlcrjw3q97yagnlrpj5bw1xwc7p-gcc-14.4.0/include/c++/14.4.0/type_traits:183:35:   [ skipping 2 instantiation contexts, use -ftemplate-backtrace-limit=0 to disable ]
+/nix/store/l1475xlcrjw3q97yagnlrpj5bw1xwc7p-gcc-14.4.0/include/c++/14.4.0/type_traits:3200:12:   required from ‘struct std::is_nothrow_invocable<CameraSystem::draw()::<lambda(auto:835&, auto:836&)>&, CameraController&, Spatial&>’
+ 3200 |     struct is_nothrow_invocable
+      |            ^~~~~~~~~~~~~~~~~~~~
+/nix/store/l1475xlcrjw3q97yagnlrpj5bw1xwc7p-gcc-14.4.0/include/c++/14.4.0/tuple:2905:30:   required from ‘constexpr const bool std::__unpack_std_tuple<template<class _Fn, class ... _ArgTypes> struct std::is_nothrow_invocable, CameraSystem::draw()::<lambda(auto:835&, auto:836&)>&, std::tuple<CameraController&, Spatial&> >’
+ 2905 |       = _Trait<_Tp, _Up...>::value;
+      |                              ^~~~~
+/nix/store/l1475xlcrjw3q97yagnlrpj5bw1xwc7p-gcc-14.4.0/include/c++/14.4.0/tuple:2936:14:   required from ‘constexpr decltype(auto) std::apply(_Fn&&, _Tuple&&) [with _Fn = CameraSystem::draw()::<lambda(auto:835&, auto:836&)>&; _Tuple = tuple<CameraController&, Spatial&>]’
+ 2936 |     noexcept(__unpack_std_tuple<is_nothrow_invocable, _Fn, _Tuple>)
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/nix/store/95yr8f0mv9rhqwn1yqylw0hs4wvfxl8h-entt-3.14.0/include/entt/entity/view.hpp:460:31:   required from ‘void entt::basic_view<entt::get_t<Type ...>, entt::exclude_t<Exclude ...>, typename std::enable_if<(sizeof... (Get) != 0), void>::type>::each(Func&, std::index_sequence<_Is ...>) const [with long unsigned int Curr = 0; Func = CameraSystem::draw()::<lambda(auto:835&, auto:836&)>; long unsigned int ...Index = {0, 1}; Get = {entt::basic_sigh_mixin<entt::basic_storage<CameraController, entt::entity, std::allocator<CameraController>, void>, entt::basic_registry<entt::entity, std::allocator<entt::entity> > >, entt::basic_sigh_mixin<entt::basic_storage<Spatial, entt::entity, std::allocator<Spatial>, void>, entt::basic_registry<entt::entity, std::allocator<entt::entity> > >}; Exclude = {}; typename std::enable_if<(sizeof... (Get) != 0), void>::type = void; std::index_sequence<_Is ...> = std::integer_sequence<long unsigned int, 0, 1>]’
+  460 |                     std::apply(func, std::tuple_cat(dispatch_get<Curr, Index>(curr)...));
+      |                     ~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/nix/store/95yr8f0mv9rhqwn1yqylw0hs4wvfxl8h-entt-3.14.0/include/entt/entity/view.hpp:469:62:   required from ‘void entt::basic_view<entt::get_t<Type ...>, entt::exclude_t<Exclude ...>, typename std::enable_if<(sizeof... (Get) != 0), void>::type>::pick_and_each(Func&, std::index_sequence<_Is ...>) const [with Func = CameraSystem::draw()::<lambda(auto:835&, auto:836&)>; long unsigned int ...Index = {0, 1}; Get = {entt::basic_sigh_mixin<entt::basic_storage<CameraController, entt::entity, std::allocator<CameraController>, void>, entt::basic_registry<entt::entity, std::allocator<entt::entity> > >, entt::basic_sigh_mixin<entt::basic_storage<Spatial, entt::entity, std::allocator<Spatial>, void>, entt::basic_registry<entt::entity, std::allocator<entt::entity> > >}; Exclude = {}; typename std::enable_if<(sizeof... (Get) != 0), void>::type = void; std::index_sequence<_Is ...> = std::integer_sequence<long unsigned int, 0, 1>]’
+  469 |             ((view == base_type::pool_at(Index) ? each<Index>(func, seq) : void()), ...);
+      |                                                   ~~~~~~~~~~~^~~~~~~~~~~
+/nix/store/95yr8f0mv9rhqwn1yqylw0hs4wvfxl8h-entt-3.14.0/include/entt/entity/view.hpp:622:22:   required from ‘void entt::basic_view<entt::get_t<Type ...>, entt::exclude_t<Exclude ...>, typename std::enable_if<(sizeof... (Get) != 0), void>::type>::each(Func) const [with Func = CameraSystem::draw()::<lambda(auto:835&, auto:836&)>; Get = {entt::basic_sigh_mixin<entt::basic_storage<CameraController, entt::entity, std::allocator<CameraController>, void>, entt::basic_registry<entt::entity, std::allocator<entt::entity> > >, entt::basic_sigh_mixin<entt::basic_storage<Spatial, entt::entity, std::allocator<Spatial>, void>, entt::basic_registry<entt::entity, std::allocator<entt::entity> > >}; Exclude = {}; typename std::enable_if<(sizeof... (Get) != 0), void>::type = void]’
+  622 |         pick_and_each(func, std::index_sequence_for<Get...>{});
+      |         ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/ecs/systems/camera_system.hpp:45:16:   required from here
+   45 |       view.each([&](auto &cameraController, auto &spatial){
+      |       ~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   46 |         Vector3N direction({
+      |         ~~~~~~~~~~~~~~~~~~~~
+   47 |           (int)context->inputBuffer->right - (int)context->inputBuffer->left,
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   48 |           (int)context->inputBuffer->up - (int)context->inputBuffer->down,
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   49 |           (int)context->inputBuffer->backward - (int)context->inputBuffer->forward
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   50 |         });
+      |         ~~~     
+   51 | 
+      |                 
+   52 |         QuaternionF qConj = spatial.rotation.conjugate();
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   53 |         QuaternionF qDir(0, direction.x, direction.y, direction.z);
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   54 |         QuaternionF qGlobal = spatial.rotation * qDir * qConj;
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   55 | 
+      |                 
+   56 |         Vector3N globalDirection(qGlobal.i, qGlobal.j, qGlobal.k);
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   57 | 
+      |                 
+   58 |         // this only allows for a single camera controller, kinda janky
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   59 |         camPos += globalDirection * cameraController.speed * context->frameTime;
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   60 |         spatial.position = camPos + frame;
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   61 | 
+      |                 
+   62 |         if (context->inputBuffer->isFocused) {
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   63 |           cameraController.pitch += 30 * context->inputBuffer->dy * context->frameTime;
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   64 |           cameraController.yaw += 30 * context->inputBuffer->dx * context->frameTime;
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   65 |         }
+      |         ~       
+   66 | 
+      |                 
+   67 |         cameraController.totalScroll += 2.f * (float)context->inputBuffer->scroll;
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   68 | 
+      |                 
+   69 |         cameraController.speed = std::exp(cameraController.totalScroll * 0.1) * 0.1;
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   70 | 
+      |                 
+   71 |         ImGui::Text("Camera Speed (KM/S): %f", cameraController.speed * 1e-3);
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   72 | 
+      |                 
+   73 |         // TODO: this is a dirty hack to fix mouse drifting
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   74 |         // the problem occurs because mouse delta only updates
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   75 |         // when the mouse moves, so it never goes to zero becasue
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   76 |         // it isn't updated when the mouse is not moving
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   77 |         context->inputBuffer->dy = 0;
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   78 |         context->inputBuffer->dx = 0;
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   79 | 
+      |                 
+   80 |         context->inputBuffer->scroll = 0;
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   81 | 
+      |                 
+   82 |         //cameraController.pitch += 10 * context->frameTime;
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   83 | 
+      |                 
+   84 |         //printf("%f %f \n", cameraController.totalScroll, cameraController.speed);
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   85 | 
+      |                 
+   86 |         spatial.rotation = eulerToQuaternion(0, cameraController.yaw, cameraController.pitch);
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   87 |       });
+      |       ~~        
+/home/devin/User/Projects/Software/Games/starman/src/ecs/systems/camera_system.hpp:47:44: warning: narrowing conversion of ‘(((int)((std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>*)(&((std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>*)(&((CameraSystem*)this)->CameraSystem::System.System::context))->std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>::operator->()->Context::inputBuffer))->std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>::operator->()->InputBuffer::right) - ((int)((std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>*)(&((std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>*)(&((CameraSystem*)this)->CameraSystem::System.System::context))->std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>::operator->()->Context::inputBuffer))->std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>::operator->()->InputBuffer::left))’ from ‘int’ to ‘double’ [-Wnarrowing]
+   47 |           (int)context->inputBuffer->right - (int)context->inputBuffer->left,
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/ecs/systems/camera_system.hpp:48:41: warning: narrowing conversion of ‘(((int)((std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>*)(&((std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>*)(&((CameraSystem*)this)->CameraSystem::System.System::context))->std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>::operator->()->Context::inputBuffer))->std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>::operator->()->InputBuffer::up) - ((int)((std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>*)(&((std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>*)(&((CameraSystem*)this)->CameraSystem::System.System::context))->std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>::operator->()->Context::inputBuffer))->std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>::operator->()->InputBuffer::down))’ from ‘int’ to ‘double’ [-Wnarrowing]
+   48 |           (int)context->inputBuffer->up - (int)context->inputBuffer->down,
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/devin/User/Projects/Software/Games/starman/src/ecs/systems/camera_system.hpp:49:47: warning: narrowing conversion of ‘(((int)((std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>*)(&((std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>*)(&((CameraSystem*)this)->CameraSystem::System.System::context))->std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>::operator->()->Context::inputBuffer))->std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>::operator->()->InputBuffer::backward) - ((int)((std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>*)(&((std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>*)(&((CameraSystem*)this)->CameraSystem::System.System::context))->std::__shared_ptr_access<Context, __gnu_cxx::_S_atomic, false, false>::operator->()->Context::inputBuffer))->std::__shared_ptr_access<InputBuffer, __gnu_cxx::_S_atomic, false, false>::operator->()->InputBuffer::forward))’ from ‘int’ to ‘double’ [-Wnarrowing]
+   49 |           (int)context->inputBuffer->backward - (int)context->inputBuffer->forward
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+make[3]: *** [CMakeFiles/example.dir/build.make:79: CMakeFiles/example.dir/example/main.cpp.o] Error 1
+make[2]: *** [CMakeFiles/Makefile2:259: CMakeFiles/example.dir/all] Error 2
+make[1]: *** [Makefile:111: all] Error 2
+make[1]: Leaving directory '/home/devin/User/Projects/Software/Games/starman/build'

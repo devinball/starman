@@ -107,11 +107,13 @@ struct IconSystem : System {
 
     auto cameras = context->registry->view<Camera, Spatial>();
     auto icons = context->registry->view<Icon, Spatial>();
-    auto rigidbodies = context->registry->view<Rigidbody>();
+
+    //auto rigidbodies = context->registry->view<Rigidbody>();
 
     Vector2I size = context->renderer->getSize();
 
     cameras.each([&](auto &camera, auto &camSpatial){
+      /*
       rigidbodies.each([&](auto &rigidbody){
       std::vector<ImVec2> points;
       for (auto state : rigidbody.future.states) {
@@ -128,6 +130,8 @@ struct IconSystem : System {
           int(255)
         ), 2.f);
       });
+
+      */
 
       icons.each([&](auto &icon, auto &spatial){
         std::vector<ImVec2> points;
