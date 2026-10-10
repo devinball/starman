@@ -13,6 +13,7 @@ struct Application {
   std::shared_ptr<Context> context;
 
   float physicsFrequency = 60; // physics update rate in hertz
+  float simSpeed = 86400 * 365 * 0.01;
 
   void run() {
     context = std::make_shared<Context>(
@@ -52,7 +53,7 @@ struct Application {
 
       while (accumulator >= context->dt) {
         context->sceneManager->update();
-        context->simTime += context->dt;
+        context->simTime += context->dt * simSpeed;
         accumulator -= context->dt;
       }
 

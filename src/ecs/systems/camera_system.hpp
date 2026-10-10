@@ -44,9 +44,9 @@ struct CameraSystem : System {
 
       view.each([&](auto &cameraController, auto &spatial){
         Vector3N direction({
-          (int)context->inputBuffer->right - (int)context->inputBuffer->left,
-          (int)context->inputBuffer->up - (int)context->inputBuffer->down,
-          (int)context->inputBuffer->backward - (int)context->inputBuffer->forward
+          Number((int)context->inputBuffer->right - (int)context->inputBuffer->left),
+          Number((int)context->inputBuffer->up - (int)context->inputBuffer->down),
+          Number((int)context->inputBuffer->backward - (int)context->inputBuffer->forward)
         });
 
         QuaternionF qConj = spatial.rotation.conjugate();

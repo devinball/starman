@@ -12,8 +12,7 @@
 
 struct Orbiter;
 
-// i need a hash for SphererOfInfluence
-using SphereOfInfluence = std::pair<std::shared_ptr<Orbiter>, std::shared_ptr<CelestialBody>>;
+//using SphereOfInfluence = std::pair<std::shared_ptr<Orbiter>, std::shared_ptr<CelestialBody>>;
 
 struct KeplerianOrbit {
   // shape describing
@@ -28,15 +27,32 @@ struct KeplerianOrbit {
   // time describing
   double timeFromPeriapsis = 0;
 
-  std::optional<SphereOfInfluence> soi;
+  Entity soi;
+};
+
+struct NewtonianOrbit {
+  Vector3N position;
+  Vector3N velocity;
+};
+
+struct ThrustingOrbit {
+  Vector3N direction;
+  float thrust;
+};
+
+struct NBodyOrbit {
+
 };
 
 using OrbitVariant = std::variant<KeplerianOrbit>;
 using Segment = std::pair<double, OrbitVariant>;
 using Trajectory = std::vector<Segment>;
 
-struct Orbiter {
+struct InitialOrbiterState {
   Vector3N velocity;
+};
+
+struct Orbiter {
   Trajectory trajectory;
 };
 
@@ -50,7 +66,6 @@ struct Maneuver {
 
   Vector3F direction;
 };
-
 
 /*
 Number orbitDistance(Orbit* a, Orbit* b, double time) {
