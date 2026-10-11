@@ -132,7 +132,6 @@ struct OrbitSystem : System {
     double cos_inc = std::cos(orbit.inclination);
     double sin_inc = std::sin(orbit.inclination);
 
-    // i need to access the trajectory of the parent SOI
     return Vector3N(
       o.x*(cos_ap*cos_lan - sin_ap*sin_lan*cos_inc) - o.y*(sin_ap*cos_lan + cos_ap*sin_lan*cos_inc),
       o.x*(cos_ap*sin_lan + sin_ap*cos_lan*cos_inc) + o.y*(cos_ap*cos_lan*cos_inc - sin_ap*sin_lan),
@@ -257,11 +256,7 @@ struct OrbitSystem : System {
       theta = 2 * Constants::pi - acos(eccV.dot(position) / (ecc * position.magnitude()));
     }
 
-    // timeFromPeri is wrong way to think about this
-    // instead timeOfPeri
-
     if (ecc < 1) {
-      //double E = 2 * atan(tan(theta / 2) / sqrt((1 + ecc) / (1 - ecc)));
       double E = 2 * atan2(sqrt(1 - ecc) * sin(theta / 2), sqrt(1 + ecc) * cos(theta/2));
       double M = E - ecc * sin(E);
       timeOfPeri = currentTime - M / sqrt(gravitationalParameter / pow(semiMajorAxis, 3));
@@ -290,20 +285,10 @@ struct OrbitSystem : System {
   }
 
   Entity getSoi(Vector3N position, double time) {
-    // stars will need to be a little different
-    // instead of doing within a radius, you just
-    // use the closest star.
-
-    // this is going to be wonky with an SOI
-    // / orbiter, because it's always
-    // it it's own SOI, so i need to exclude
-    // those cases from being in their own SOIs
-
     Entity newSoi = entt::null;
     double smallestRadius = INFINITY;
 
     for (auto& soi : getSoiEntities()) {
-      //sphereOfInfluenceRadius = a * pow(m / M, 2/5);
       double soiRadius = getSoiRadius(soi);
       double distance = (position - trajectoryPosition(getSoiTrajectory(soi), time)).magnitude();
 
@@ -361,14 +346,7 @@ struct OrbitSystem : System {
   }
 
   Trajectory extendTrajectory(Trajectory trajectory) {
-    // assume we start with a single Segment
-    // out goal is to extend that segment arbitrarily
-    // far into the future
-
-    const int maxOrbits = 5;
-
-    // wait, this function relies on the orbits already having proper end times
-    // but they might not always?
+    const int maxOrbits = 3;
 
     while (trajectory.size() < maxOrbits) {
       auto [lastOrbitEndTime, lastOrbit] = trajectory.back();
@@ -391,41 +369,6 @@ struct OrbitSystem : System {
     }
     
     return trajectory;
-
-    /*
-    while (trajectory.size() < maxOrbits) {
-      auto lastOrbit = trajectory.back(); // should probably actually find the latest trajectory (time wise)
-
-      // start looking for the next orbit when the trajectory ends
-      double encounterTime = soiHandoverTime(std::get<KeplerianOrbit>(lastOrbit.second), lastOrbit.first);
-
-      Entity encounterSoi = getSoi(orbitPosition(std::get<KeplerianOrbit>(lastOrbit.second), encounterTime), encounterTime);
-      if (encounterSoi == entt::null) {
-        printf("Could not get encounter SOI, this is weird\n");
-        return trajectory;
-      }
-
-      printf("Got encounter soi time %f\n", encounterTime);
-
-      auto soiT = getSoiTrajectory(encounterSoi);
-
-      Vector3N soiPos = trajectoryPosition(soiT, encounterTime);
-      Vector3N soiVel = trajectoryVelocity(soiT, encounterTime);
-
-      const KeplerianOrbit& orbit = std::get<KeplerianOrbit>(lastOrbit.second);
-      Vector3N pos = orbitPosition(orbit, encounterTime);
-      Vector3N vel = orbitVelocity(orbit, encounterTime);
-
-      KeplerianOrbit newOrbit = orbitFromCartesian(pos - soiPos, vel - soiVel, encounterTime, encounterSoi);
-      // here i need to put where the orbit should end.
-      // this maybe needs to be recursive?
-      // a Segments end should be informed by when that segment
-      // switches SOI, preforms a manuver, or other force applied
-      trajectory.push_back({encounterTime, newOrbit});
-    }
-
-    return trajectory;
-    */
   }
 
   Trajectory purgeTrajectory(Trajectory trajectory, double currentTime) {
@@ -448,10 +391,6 @@ struct OrbitSystem : System {
     return newTrajectory;
   }
 
-  // ok, sometimes orbiters are just disappearing, i think when they go fast
-  // or are really far?
-  // i suspect there is some sort of NAN/infinity going on here, or a giant discontinuity
-  // in position.
   void init() {
     auto stateView = context->registry->view<InitialOrbiterState, Orbiter, Spatial>();
     stateView.each([this](auto &initialState, auto &orbiter, auto &spatial){
@@ -466,22 +405,8 @@ struct OrbitSystem : System {
 
       KeplerianOrbit orbit = orbitFromCartesian(spatial.position - soiPos, initialState.velocity - soiVel, context->simTime, soi);
 
-      //printf("%f\n", orbit.semiLatusRectum);
-
-      // should not be infinity...
-      // but trajectory extend should work?
       orbiter.trajectory.push_back({context->simTime + 1, orbit});
       orbiter.trajectory = extendTrajectory(orbiter.trajectory);
-
-      //printf("Tlen: %f\n", double(orbiter.trajectory.size()));
-
-      //Vector3N t = trajectoryPosition(orbiter.trajectory, context->simTime + 10);
-      //printf("POS %f %f %f\n", t.x, t.y, t.z);
-
-      //Vector3N t2 = orbitPosition(orbit, context->simTime);
-      //printf("POS2 %f %f %f\n", double(t2.x), double(t2.y), double(t2.z));
-
-      //printf("%f %f %f\n", trajectoryPosition(orbiter.trajectory, context->simTime));
     });
   }
 
@@ -498,7 +423,7 @@ struct OrbitSystem : System {
   //      of course having two world states would
   //      be much worse, as is it's pretty easy
   //      to set everything up, which is nice
-  // 3. encounters don't seem to be working?
+  // 3. physical accuracy
   //      need to verify that encounter system
   //      makes physical sense
   // 4. discontinuity watchdog.
@@ -506,30 +431,28 @@ struct OrbitSystem : System {
   //      occur, so having something that makes
   //      sure that everything is (mostly) continuous
   //      is probably a good idea.
+  //      sometimes orbiters seem to be disappearing,
+  //      i suspect that this is a nan issue
+  // 5. initial conditions and setup
+  //      i need to system to better deal with setup
+  //      or initial conditions in general. a 2 body newtonian
+  //      orbit seems a natural way to do this.
+  // 6. better star SOI partitioning
+  //      will need to be binary star system ready
+  // 7. prevent SOIs from seeing themselves
 
   void update() {
-    // SOIs are determined by celestial body objects
-    // sphereOfInfluenceRadius = a * pow(m / M, 2/5);
-
-    // if an orbiter's trajectory is null, then it's orbit
-    // should be determined with the dummy Position and Velocity
-    // components of the struct.
-    // the primary purpose of this is to make it easy to create
-    // and orbit without having to think about a trajectory trajectory
-
     auto orbiterView = context->registry->view<Orbiter, Spatial>();
     orbiterView.each([this](auto &orbiter, auto &spatial){
       if (trajectoryEndTime(orbiter.trajectory) <= context->simTime) {
-        //printf("end times\n");
         orbiter.trajectory = purgeTrajectory(orbiter.trajectory, context->simTime);
         orbiter.trajectory = extendTrajectory(orbiter.trajectory);
       }
       Vector3N pos = trajectoryPosition(orbiter.trajectory, context->simTime);
-      //printf("POS: %f %f %f\n", pos.x, pos.y, pos.z);
-      // position is indeed nan, nan, nan or the additive inverse thereof
+
+      // i have to flip coordiantes here, this is because the orbit math uses a different system
+      // to the renderer, yes i very much need to fix this
       spatial.position = Vector3N(pos.x, pos.z, -pos.y);
-      // potentially use orbiter.trajectory.velocity(context->simTime);
-      // in order to interpolate between physics frames
     });
   }
 };
