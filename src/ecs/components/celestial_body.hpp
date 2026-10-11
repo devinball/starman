@@ -6,8 +6,17 @@
 // atmospheric model: https://en.wikipedia.org/wiki/NRLMSISE-00
 // probably don't need that complex tho
 
+/*
+enum CelestialBodyType {
+  PLANET,
+  MOON,
+  STAR
+}
+*/
+
 struct CelestialBody {
   double mass;
   double gravitationalParameter;
   double soiRadius;
+  //CelestialBodyType celestialBodyType;
 };

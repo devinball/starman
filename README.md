@@ -29,6 +29,7 @@ maybe one layer could just handle timing and loops, it would call a special on u
 - Bloom
 
 ## Physics
+- __THERE IS COORDINATE HANDEDNESS MISALIGNMENT!!__ this is not good. i need to adjust the renderer to use standard right handed coordinates
 - Quad, Fixed, or Arbitrary precision positions
 - Interpolation, including for planets
 - Variable delta time (with energy conservation)

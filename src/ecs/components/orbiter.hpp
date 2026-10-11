@@ -25,7 +25,7 @@ struct KeplerianOrbit {
   double argumentPeriapsis = 0;
 
   // time describing
-  double timeFromPeriapsis = 0;
+  double timeOfPeriapsis = 0;
 
   Entity soi;
 };

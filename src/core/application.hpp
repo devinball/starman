@@ -13,7 +13,7 @@ struct Application {
   std::shared_ptr<Context> context;
 
   float physicsFrequency = 60; // physics update rate in hertz
-  float simSpeed = 86400 * 365 * 0.01;
+  float simSpeed = 86400 * 365 * 0.0075;
 
   void run() {
     context = std::make_shared<Context>(

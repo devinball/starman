@@ -61,13 +61,14 @@ struct SceneManager {
 
       //double orbPer = sqrt((pow(semiMajorAxis, 3) * 4 * pow(std::numbers::pi, 2)) / (6.6743015e-11 * centerMass));
 
-      Trajectory trajectory = Trajectory{{0, KeplerianOrbit{
+      // TODO: this ends at infinity, unsure how bad this is
+      Trajectory trajectory = Trajectory{{INFINITY, KeplerianOrbit{
         eccentricity,
         semiMajorAxis * (1 - pow(eccentricity, 2)),
         radians(incl),
         radians(longNode),
         radians(argPeri),
-        0,
+        0, // they all start at perihelion, this must be fixed later
         parent
         //parent == entt::null ? std::optional<SphereOfInfluence>{} : std::optional<SphereOfInfluence>{std::make_pair(std::make_shared<Orbiter>(context->registry->get<Orbiter>(parent)), std::make_shared<CelestialBody>(context->registry->get<CelestialBody>(parent)))}
       }}};
@@ -83,19 +84,35 @@ struct SceneManager {
       return randomF() * 2 - 1;
     }
 
+    float signRand() {
+      float x = randNorm();
+      if (x > 0) return 1;
+      if (x < 0) return -1;
+      return 0;
+    }
+
+    float edgeBiasedRandom() {
+      return pow(randomF(), 0.1) * 2 - 1;
+    }
+
     Entity createOrbiter() {
-      double pSpread = 1e11;
-      double vSpread = 1e5;
+      double pSpread = 5.79091e7 * 1e3 * (1 - pow(0.1, 2)) * (1 + (randomF() * 0.1)); //1e11;
+      double vSpread = 47.36*1e3;
 
       Entity e = context->registry->create();
       //Handle<Mesh> mesh = context->resourceManager->load<Mesh>("example/models/cube.obj");//("example/models/iss.obj");
       //Handle<Material> material = context->resourceManager->load<Material>("example/materials/fabric.yaml");
       //context->registry->emplace<MeshRenderer>(e, mesh, material);
-      context->registry->emplace<Spatial>(e, Vector3N{pSpread * randNorm(), pSpread * randNorm(), pSpread * randNorm()}, Vector3F{1, 1, 1}, QuaternionF());
+      float theta = 2 * Constants::pi * randomF();
+      context->registry->emplace<Spatial>(e, Vector3N{
+        pSpread * std::cos(theta),
+        pSpread * std::sin(theta),
+        1e5 * randNorm()
+      }, Vector3F{1, 1, 1}, QuaternionF());
       context->registry->emplace<Icon>(e, Color(randomF(), randomF(), randomF(), 1.0f));
       //context->registry->emplace<Tag>(e, "International Space Station");
 
-      Vector3N velocity = Vector3N(vSpread * randNorm(), vSpread * randNorm(), vSpread * randNorm());
+      Vector3N velocity = Vector3N(std::sin(theta) * vSpread + randNorm() * 150, -1 * std::cos(theta) * vSpread + randNorm() * 150, randNorm() * 150);
       context->registry->emplace<InitialOrbiterState>(e, velocity);
       context->registry->emplace<Orbiter>(e, Trajectory{});
 
@@ -119,7 +136,7 @@ struct SceneManager {
 
       Entity sun = createPlanet("example/materials/planets/sun.yaml", "sun", 696000000, 1.988416e30, 0.1, 0.1, 0, 0, 0, 1e15, entt::null); // sun
       //createPlanet("example/materials/planets/sun.yaml", "sun 2", 496000000, 1.125e30, 7.78321e9, 0.04846, 1.29861416, 14.27495244, 100.29282654, 0, sun); // sun 2
-      createPlanet("example/materials/planets/mecury.yaml", "mecury", 2440530, 0.330103e24, 5.79091e7 * 1e3, 0.2000000564, 7.00559432, 48.33961819, 77.45771895, 0, sun); // mecury
+      createPlanet("example/materials/planets/mecury.yaml", "mecury", 2440530, 0.330103e24 * 1e5, 5.79091e7 * 1e3, 0.2000000564 * 0, 7.00559432 * 0, 48.33961819 * 0, 77.45771895 * 0, 0, sun); // mecury
       createPlanet("example/materials/planets/venus.yaml", "venus", 6051800, 4.86731e24, 1.08209e8 * 1e3, 0.00676, 3.39777545, 76.67261496, 131.76755713, 0, sun); // venus
       Entity earth = createPlanet("example/materials/planets/earth.yaml", "earth", 6378137, 5.97217e24, 1.49598e8 * 1e3, 0.01670, -0.00054346, -5.11260389, 102.93005885, 0, sun); // earth
         createPlanet("example/materials/planets/moon.yaml", "moon", 1737400, 7.346e22, 3.83398e5 * 1e3, 0.05555, 0, 0, 0, 0, earth); // moon
@@ -149,7 +166,7 @@ struct SceneManager {
       fpsCam();
       solSystem();
 
-      for (int i = 0; i < 50; i++) {
+      for (int i = 0; i < 100; i++) {
         createOrbiter();
       }
 
