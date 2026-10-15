@@ -15,6 +15,7 @@ struct Context {
   float dt = 0.01; // default non-zero value to avoid errors dividing by dt;
   float frameTime = 0.01;
   float updateTime = 0.01;
+  double simSpeed = 1;
   double simTime = 0;
   double runtime = 0;
   double physicsInterpolate = 0;

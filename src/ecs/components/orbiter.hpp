@@ -14,6 +14,13 @@ struct Orbiter;
 
 //using SphereOfInfluence = std::pair<std::shared_ptr<Orbiter>, std::shared_ptr<CelestialBody>>;
 
+/*
+struct Orbit {
+  override Vector3N position();
+  override Vector3N velocity();
+};
+*/
+
 struct KeplerianOrbit {
   // shape describing
   double eccentricity = 0;
@@ -30,6 +37,14 @@ struct KeplerianOrbit {
   Entity soi;
 };
 
+struct KinematicOrbit {
+  // straight line with constant acceleration
+  Vector3N position;
+  Vector3N velocity;
+  Vector3N acceleration;
+  double initialTime;
+};
+
 struct NewtonianOrbit {
   Vector3N position;
   Vector3N velocity;
@@ -44,13 +59,24 @@ struct NBodyOrbit {
 
 };
 
-using OrbitVariant = std::variant<KeplerianOrbit>;
+enum EndType {
+  SOI_HANDOVER,
+  HORIZON
+};
+
+using OrbitVariant = std::variant<KeplerianOrbit, KinematicOrbit>;
+
+/*
+struct Segment {
+  double endTime;
+  EndType endType
+  OrbitVariant orbit;
+  Entity frame; // entt::null is 'world space'/default reference frame
+};
+*/
+
 using Segment = std::pair<double, OrbitVariant>;
 using Trajectory = std::vector<Segment>;
-
-struct InitialOrbiterState {
-  Vector3N velocity;
-};
 
 struct Orbiter {
   Trajectory trajectory;

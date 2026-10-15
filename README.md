@@ -30,6 +30,7 @@ maybe one layer could just handle timing and loops, it would call a special on u
 
 ## Physics
 - __THERE IS COORDINATE HANDEDNESS MISALIGNMENT!!__ this is not good. i need to adjust the renderer to use standard right handed coordinates
+- probably could get away with something like 10hz physics frequency
 - Quad, Fixed, or Arbitrary precision positions
 - Interpolation, including for planets
 - Variable delta time (with energy conservation)

@@ -66,7 +66,7 @@ struct CameraSystem : System {
 
         cameraController.totalScroll += 2.f * (float)context->inputBuffer->scroll;
 
-        cameraController.speed = std::exp(cameraController.totalScroll * 0.1) * 0.1;
+        cameraController.speed = std::exp(cameraController.totalScroll * 0.1 + 17) * 0.1;
 
         ImGui::Text("Camera Speed (KM/S): %f", cameraController.speed * 1e-3);
 

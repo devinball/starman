@@ -104,17 +104,15 @@ struct SceneManager {
       //Handle<Material> material = context->resourceManager->load<Material>("example/materials/fabric.yaml");
       //context->registry->emplace<MeshRenderer>(e, mesh, material);
       float theta = 2 * Constants::pi * randomF();
-      context->registry->emplace<Spatial>(e, Vector3N{
-        pSpread * std::cos(theta),
-        pSpread * std::sin(theta),
-        1e5 * randNorm()
-      }, Vector3F{1, 1, 1}, QuaternionF());
+      context->registry->emplace<Spatial>(e, Vector3N{0, 0, 0}, Vector3F{1, 1, 1}, QuaternionF());
       context->registry->emplace<Icon>(e, Color(randomF(), randomF(), randomF(), 1.0f));
-      //context->registry->emplace<Tag>(e, "International Space Station");
+      //context->registry->emplace<Tag>(e, "orbiter");
 
+      Vector3N position = Vector3N{pSpread * std::cos(theta), pSpread * std::sin(theta), 1e5 * randNorm()};
       Vector3N velocity = Vector3N(std::sin(theta) * vSpread + randNorm() * 150, -1 * std::cos(theta) * vSpread + randNorm() * 150, randNorm() * 150);
-      context->registry->emplace<InitialOrbiterState>(e, velocity);
-      context->registry->emplace<Orbiter>(e, Trajectory{});
+      double timeOffset = 0;// int(randomF() * 3600); // hack to stop all orbits from being computed at once
+      Trajectory trajectory = Trajectory{{1 + timeOffset, KinematicOrbit{position, velocity, Vector3N(0, 0, 0), 0}}};
+      context->registry->emplace<Orbiter>(e, trajectory);
 
       return e;
     }
@@ -169,7 +167,7 @@ struct SceneManager {
       fpsCam();
       solSystem();
 
-      for (int i = 0; i < 500; i++) {
+      for (int i = 0; i < 1000; i++) {
         createOrbiter();
       }
 
@@ -187,6 +185,8 @@ struct SceneManager {
         system->init();
       }
     }
+
+    int counter = 0;
 
     void update() {
       for (auto& system : systems) {

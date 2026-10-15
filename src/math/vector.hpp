@@ -84,6 +84,15 @@ struct Vector3T {
         return Vector3T{x * b, y * b, z * b};
     }
 
+    // TODO: implement this for other vectors on other operators
+    Vector3T operator*(const T &b) const {
+        return Vector3T{x * b, y * b, z * b};
+    }
+
+    Vector3T operator+(const Vector3T &b) const {
+        return Vector3T{x + b.x, y + b.y, z + b.z};
+    }
+
     Vector3T& operator+=(const Vector3T& b) {
         this->x += b.x;
         this->y += b.y;
