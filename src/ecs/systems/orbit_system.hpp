@@ -14,14 +14,14 @@ struct OrbitSystem : System {
 
   double trajectoryEndTime(const Trajectory& trajectory) {
     double t = 0;
-    for (auto [end, orbit] : trajectory) {
-      if (end > t) { t = end; } 
+    for (auto segment : trajectory) {
+      if (segment.endTime > t) { t = segment.endTime; } 
     }
     return t;
   }
 
-  Trajectory getSoiTrajectory(Entity soi) {
-    return context->registry->get<Orbiter>(soi).trajectory;
+  Trajectory& getTrajectory(Entity entity) {
+    return context->registry->get<Orbiter>(entity).trajectory;
   }
 
   double soiGravitationalParameter(Entity soi) {
@@ -32,237 +32,42 @@ struct OrbitSystem : System {
     return context->registry->get<CelestialBody>(soi).soiRadius;
   }
 
-  double aToP(double a, double e) {
-    return a * (1 - e*e);
-  }
-
-  double hyperbolicEccentricAnomaly(double M, double e) {
-    if (!std::isfinite(M) || !(e > 1.0)) {
-      printf("hyperbolicEccentricAnomaly: bad input M=%g e=%g\n", M, e);
-      return M;
-    }
-
-    const double sign = M < 0 ? -1.0 : 1.0;
-    const double m = std::abs(M);            // solve for m >= 0, restore the sign at the end
-    if (m < 1e-15) return 0.0;
-
-    auto f  = [&](double F) { return e * std::sinh(F) - F - m; };
-    auto df = [&](double F) { return e * std::cosh(F) - 1.0; };
-
-    // starting point: must satisfy f(F) >= 0, i.e. be at or right of the root
-    // - sinh(F) - F >= F^3/6, so cbrt(6m) is an upper bound on the root
-    // - for large m, the log form is much closer, and the loop below falls back to it
-    double F = std::cbrt(6.0 * m);
-    double Flog = std::log(2.0 * m / e + 1.8);
-    if (f(Flog) >= 0.0 && Flog < F) F = Flog;
-    while (f(F) < 0.0) F += 1.0;             // safety net, rarely runs
-
-    for (int i = 0; i < 100; ++i) {
-      double step = f(F) / df(F);
-      F -= step;
-      if (F < 0.0) F = 0.0;
-      if (std::abs(step) <= 1e-14 * std::max(1.0, F)) break;   // relative tolerance
-    }
-    return sign * F;
-  }
-
-  /*
-  double hyperbolicEccentricAnomaly(double M, double e) {
-    double E = M; // initial guess for M
-    
-    auto kepler = [e](double E){ return e * std::sinh(E) - E; };
-
-    double tolerance = 1e-10;
-    int maxIterations = 1000;
-    int iterations = 0;
-    while (std::abs(kepler(E) - M) > tolerance && iterations < maxIterations) {
-      E -= (kepler(E) - M) / (e * cosh(E) - 1);
-      iterations += 1;
-    }
-
-    if (std::isnan(e)) { printf("e\n"); }
-    if (std::isnan(M)) { printf("M\n"); }
-    if (std::isnan(E)) { printf("E\n"); }
-
-    // its just E that is nan
-
-    return E;
-  }
-  */
-
-  double elipticalEccentricAnomaly(double M, double e) {
-    double E = M;
-
-    auto kepler = [e](double E){ return E - e * std::sin(E); };
-
-    // The nan issue starts here
-
-
-    double tolerance = 1e-10;
-    int maxIterations = 1000;
-    int iterations = 0;
-    while (std::abs(kepler(E) - M) > tolerance && iterations < maxIterations) {
-      E -= (kepler(E) - M) / (1 - e * cos(E));
-      iterations += 1;
-    }
-    return E;
-  }
-
-  double elipticalTrueAnomaly(double M, double e) {
-    double E = elipticalEccentricAnomaly(M, e);
-    return 2 * atan(sqrt((1 + e) / (1 - e)) * tan(E / 2));
-  }
-
-  double parabolicTrueAnomaly(double M) {
-    double D = cbrt(3 * M + sqrt(9 * pow(M, 2) + 2)) + cbrt(3 * M - sqrt(9 * pow(M, 2) + 1));
-    return 2 * atan(D);
-  }
-
-  double hyperbolicTrueAnomaly(double M, double e) {
-    double E = hyperbolicEccentricAnomaly(M, e);
-    return 2 * atan(sqrt((e + 1) / (e - 1)) * tanh(E / 2));
-  }
-
-  double meanAnomaly(double eccentricity, double semiLatusRectum, double time, double gravitationalParameter) {
-    double M;
-    if (eccentricity < 1) {
-      double a = semiLatusRectum / (1 - pow(eccentricity, 2));
-      M = sqrt(gravitationalParameter / pow(a, 3)) * time;
-      M = fmod(M, 2 * Constants::pi);
-    }
-    else if (eccentricity == 1) {
-      M = sqrt(gravitationalParameter / pow(semiLatusRectum, 3)) * time;
-    }
-    else {
-      double a = semiLatusRectum / (pow(eccentricity, 2) - 1);
-      M = sqrt(gravitationalParameter / pow(std::abs(a), 3)) * time;
-    }
-
-    return M;
-  }
-
-  double trueAnomaly(double M, double e) {
-    double theta;
-    if (e < 1) {
-      theta = elipticalTrueAnomaly(M, e);
-      if (std::isnan(theta)) { printf("theta e\n"); }
-    }
-    else if (e == 1) {
-      theta = parabolicTrueAnomaly(M);
-      if (std::isnan(theta)) { printf("theta p\n"); }
-    }
-    else {
-      theta = hyperbolicTrueAnomaly(M, e);
-    }
-
-    return theta;
-  }
-
-  Vector3N orbitPosition(const KeplerianOrbit& orbit, double time) {
-    // just return zero, orbiting around nothing makes no sense
-    if (orbit.soi == entt::null) {
-      return Vector3N(0, 0, 0);
-    }
-
-    double gravitationalParameter = soiGravitationalParameter(orbit.soi);
-
-    double t = time - orbit.timeOfPeriapsis;
-
-    double M = meanAnomaly(orbit.eccentricity, orbit.semiLatusRectum, t, gravitationalParameter);
-    double theta = trueAnomaly(M, orbit.eccentricity);
-    double r = orbit.semiLatusRectum / (1 + orbit.eccentricity * std::cos(theta));
-    Vector3N o = Vector3N(std::cos(theta), std::sin(theta), 0) * r;
-
-    double cos_ap = std::cos(orbit.argumentPeriapsis);
-    double sin_ap = std::sin(orbit.argumentPeriapsis);
-    double cos_lan = std::cos(orbit.longAscendingNode);
-    double sin_lan = std::sin(orbit.longAscendingNode);
-    double cos_inc = std::cos(orbit.inclination);
-    double sin_inc = std::sin(orbit.inclination);
-
-    return Vector3N(
-      o.x*(cos_ap*cos_lan - sin_ap*sin_lan*cos_inc) - o.y*(sin_ap*cos_lan + cos_ap*sin_lan*cos_inc),
-      o.x*(cos_ap*sin_lan + sin_ap*cos_lan*cos_inc) + o.y*(cos_ap*cos_lan*cos_inc - sin_ap*sin_lan),
-      o.x*sin_ap*sin_inc + o.y*cos_ap*sin_inc
-    ) + trajectoryPosition(getSoiTrajectory(orbit.soi), time);
-  }
-
-  Vector3N orbitVelocity(const KeplerianOrbit& orbit, double time) {
-    // just return zero, orbiting around nothing makes no sense
-    if (orbit.soi == entt::null) {
-      return Vector3N(0, 0, 0);
-    }
-
-    double gravitationalParameter = soiGravitationalParameter(orbit.soi);
-
-    double t = time - orbit.timeOfPeriapsis;
-    
-    double M = meanAnomaly(orbit.eccentricity, orbit.semiLatusRectum, t, gravitationalParameter);
-    double theta = trueAnomaly(M, orbit.eccentricity);
-    double mu = gravitationalParameter;
-    double r = orbit.semiLatusRectum / (1 + orbit.eccentricity * std::cos(theta));
-
-    double h = sqrt(mu * orbit.semiLatusRectum);
-    double v_r = (mu / h) * orbit.eccentricity * std::sin(theta);
-    double v_theta = (mu / h) * (1 + orbit.eccentricity * std::cos(theta)); // TODO issue above here, if h is 0, the issue could occur
-    Vector3N o = Vector3N(v_r * std::cos(theta) - v_theta * std::sin(theta), v_r * std::sin(theta) + v_theta * std::cos(theta), 0.0);
-
-    double cos_ap = std::cos(orbit.argumentPeriapsis);
-    double sin_ap = std::sin(orbit.argumentPeriapsis);
-    double cos_lan = std::cos(orbit.longAscendingNode);
-    double sin_lan = std::sin(orbit.longAscendingNode);
-    double cos_inc = std::cos(orbit.inclination);
-    double sin_inc = std::sin(orbit.inclination);
-
-    return Vector3N(
-      o.x*(cos_ap*cos_lan - sin_ap*sin_lan*cos_inc) - o.y*(sin_ap*cos_lan + cos_ap*sin_lan*cos_inc),
-      o.x*(cos_ap*sin_lan + sin_ap*cos_lan*cos_inc) + o.y*(cos_ap*cos_lan*cos_inc - sin_ap*sin_lan),
-      o.x*sin_ap*sin_inc + o.y*cos_ap*sin_inc
-    ) + trajectoryVelocity(getSoiTrajectory(orbit.soi), time);
-  }
-
-  Vector3N orbitPosition(const KinematicOrbit& orbit, double time) {
-    return orbit.position + orbit.velocity * (time - orbit.initialTime) + orbit.acceleration * 0.5 * pow(time - orbit.initialTime, 2);
-  }
-
-  Vector3N orbitVelocity(const KinematicOrbit& orbit, double time) {
-    return orbit.velocity + orbit.acceleration * (time - orbit.initialTime);
-  }
-
-  const OrbitVariant* activeSegment(const Trajectory& trajectory, double time) {
+  Segment* activeSegment(Trajectory& trajectory, double time) {
     // get the orbit with the smallest end time, that still remains in the future
     if (trajectory.size() == 0) { printf("empty trajectory!\n"); return nullptr; }
-    const OrbitVariant* best = nullptr;
-    const OrbitVariant* last = nullptr;
+    Segment* best = nullptr;
+    Segment* last = nullptr;
     double bestEnd = -INFINITY;
     double lastEnd = -INFINITY;
-    for (const auto& [end, variant] : trajectory) {
-      if (end >= time && (!best || end < bestEnd)) {
-        best = &variant;
-        bestEnd = end;
+    for (auto& segment : trajectory) {
+      if (segment.endTime >= time && (!best || segment.endTime < bestEnd)) {
+        best = &segment;
+        bestEnd = segment.endTime;
       }
-      if (end > lastEnd) {
-        last = &variant;
-        lastEnd = end;
+      if (segment.endTime > lastEnd) {
+        last = &segment;
+        lastEnd = segment.endTime;
       }
     }
     // return best if it exists, otherfallback to the last orbit
     return best ? best : last;
   }
 
-  Vector3N trajectoryPosition(const Trajectory& trajectory, double time) {
-    const OrbitVariant* orbit = activeSegment(trajectory, time);
-    return orbit ? std::visit([this, time](const auto& i) { return orbitPosition(i, time); }, *orbit) : Vector3N(0, 0, 0);
+  Vector3N trajectoryPosition(Trajectory& trajectory, double time) {
+    Segment* segment = activeSegment(trajectory, time);
+    Vector3N localPosition = segment ? std::visit([this, time](auto& i) { return i.position(time); }, segment->orbit) : Vector3N(0, 0, 0);
+    Vector3N framePosition = (segment->frame == entt::null ? Vector3N(0, 0, 0) : trajectoryPosition(getTrajectory(segment->frame), time));
+    return localPosition + framePosition;
   }
 
-  Vector3N trajectoryVelocity(const Trajectory& trajectory, double time) {
-    const OrbitVariant* orbit = activeSegment(trajectory, time);
-    return orbit ? std::visit([this, time](const auto& i) { return orbitVelocity(i, time); }, *orbit) : Vector3N(0, 0, 0);
+  Vector3N trajectoryVelocity(Trajectory& trajectory, double time) {
+    Segment* segment = activeSegment(trajectory, time);
+    Vector3N localVelocity = segment ? std::visit([this, time](auto& i) { return i.velocity(time); }, segment->orbit) : Vector3N(0, 0, 0);
+    Vector3N frameVelocity = (segment->frame == entt::null ? Vector3N(0, 0, 0) : trajectoryVelocity(getTrajectory(segment->frame), time));
+    return localVelocity + frameVelocity;
   }
 
-  KeplerianOrbit orbitFromCartesian(Vector3N position, Vector3N velocity, double currentTime, Entity soi) {
-    double gravitationalParameter = soiGravitationalParameter(soi);
-
+  KeplerianOrbit orbitFromCartesian(Vector3N position, Vector3N velocity, double currentTime, double gravitationalParameter) {
     Vector3N h = position.cross(velocity);
     Vector3N eccV = velocity.cross(h) / gravitationalParameter - position.normalized();
     double ecc = eccV.magnitude();
@@ -335,7 +140,7 @@ struct OrbitSystem : System {
       timeOfPeri = currentTime - M / sqrt(gravitationalParameter / pow(std::abs(semiMajorAxis), 3));
     }
 
-    return KeplerianOrbit{ecc, semiLatusRectum, incl, longAscNode, argPeri, timeOfPeri, soi};
+    return KeplerianOrbit(ecc, semiLatusRectum, incl, longAscNode, argPeri, timeOfPeri, gravitationalParameter);
   }
 
   std::vector<Entity> getSoiEntities() {
@@ -353,7 +158,7 @@ struct OrbitSystem : System {
 
     for (auto& soi : getSoiEntities()) {
       double soiRadius = getSoiRadius(soi);
-      double distance = (position - trajectoryPosition(getSoiTrajectory(soi), time)).magnitude();
+      double distance = (position - trajectoryPosition(getTrajectory(soi), time)).magnitude();
 
       if (soiRadius < smallestRadius && distance <= soiRadius) {
         smallestRadius = soiRadius;
@@ -365,9 +170,8 @@ struct OrbitSystem : System {
   }
 
   double calculateOrbitalPeriod(KeplerianOrbit orbit) {
-    double gravitationalParameter = soiGravitationalParameter(orbit.soi);
     double semiMajorAxis = orbit.semiLatusRectum / (1 - pow(orbit.eccentricity, 2));
-    return 2 * Constants::pi * sqrt(pow(semiMajorAxis, 3) / gravitationalParameter);
+    return 2 * Constants::pi * sqrt(pow(semiMajorAxis, 3) / orbit.gravitationalParameter);
   }
 
   bool stableOrbit(KeplerianOrbit orbit, double currentTime) {
@@ -376,7 +180,7 @@ struct OrbitSystem : System {
     return false;
   }
 
-  std::pair<double, bool> soiHandoverTime(KeplerianOrbit orbit, double currentTime) {
+  std::pair<double, EndType> soiHandoverTime(KeplerianOrbit& orbit, Entity soi, double currentTime) {
     // TODO: more informed step size and orbit length
 
     
@@ -404,20 +208,20 @@ struct OrbitSystem : System {
     */
 
     for (double time = currentTime + step; time <= currentTime + maxOrbitLength; time += step) {
-      if (orbit.soi != getSoi(orbitPosition(orbit, time), time)) {
+      if (soi != getSoi(orbit.position(time), time)) {
         double high = time;
         double low = time - step;
 
         while (high - low > 1) {
           double mid = 0.5 * (high + low);
-          if (orbit.soi != getSoi(orbitPosition(orbit, mid), mid)) { high = mid; }
+          if (soi != getSoi(orbit.position(mid), mid)) { high = mid; }
           else { low = mid; }
         }
-        return std::make_pair(high, true);
+        return std::make_pair(high, EndType::HANDOVER);
       }
     }
 
-    return std::make_pair(currentTime + maxOrbitLength, false);
+    return std::make_pair(currentTime + maxOrbitLength, EndType::HORIZON);
   }
 
   // TODO!! very important. there seems to be a bug, where eventually
@@ -429,17 +233,17 @@ struct OrbitSystem : System {
   void extendTrajectory(Trajectory& trajectory) {
     // this is assuming that the back of the trajectory is always the most
     // recent, which is probably a fine assumption to make.
-    auto [lastOrbitEndTime, lastOrbitVariant] = trajectory.back();
+    Segment segment = trajectory.back();
 
-    Vector3N position = trajectoryPosition(trajectory, lastOrbitEndTime);
-    Vector3N velocity = trajectoryVelocity(trajectory, lastOrbitEndTime);
+    Vector3N position = trajectoryPosition(trajectory, segment.endTime);
+    Vector3N velocity = trajectoryVelocity(trajectory, segment.endTime);
 
 
     // i suspect the issue actually arises in trajectory position/velocity
     // the nan causes it to not find the SOI, at which point kinematic
     // orbit doesn't matter, because it's all nan as well
 
-    Entity newSoi = getSoi(position, lastOrbitEndTime);
+    Entity newSoi = getSoi(position, segment.endTime);
     // maybe if no soi is found i should instead add a KinematicOrbit with 0 acceleration
     if (newSoi == entt::null) { 
       // this prevents objects from just disapearing when outside an SOI
@@ -449,29 +253,29 @@ struct OrbitSystem : System {
       // i believe this to be the expected behavior after testing, it just actually
       // takes 277 * maxOrbitLength to leave the soi, at which point it's trajectory
       // becomes kinematic
-      trajectory.push_back({INFINITY, KinematicOrbit{position, velocity, Vector3N(0, 0, 0), lastOrbitEndTime}});
+      trajectory.push_back(Segment(1e8, EndType::HORIZON, entt::null, KinematicOrbit(position, velocity, Vector3N(0, 0, 0), segment.endTime)));
       return;
     }
 
-    Vector3N soiPosition = trajectoryPosition(getSoiTrajectory(newSoi), lastOrbitEndTime);
-    Vector3N soiVelocity = trajectoryVelocity(getSoiTrajectory(newSoi), lastOrbitEndTime);
+    Vector3N soiPosition = trajectoryPosition(getTrajectory(newSoi), segment.endTime);
+    Vector3N soiVelocity = trajectoryVelocity(getTrajectory(newSoi), segment.endTime);
+
+    double gravitationalParameter = soiGravitationalParameter(newSoi);
+    KeplerianOrbit newOrbit = orbitFromCartesian(position - soiPosition, velocity - soiVelocity, segment.endTime, gravitationalParameter);
+    auto [encounterTime, endType] = soiHandoverTime(newOrbit, newSoi, segment.endTime);
 
     orbitsUpdated += 1;
 
-    KeplerianOrbit newOrbit = orbitFromCartesian(position - soiPosition, velocity - soiVelocity, lastOrbitEndTime, newSoi);
+    //printf("Segment length: %f\n", encounterTime - segment.endTime);
 
-    auto [encounterTime, hasEncounter] = soiHandoverTime(newOrbit, lastOrbitEndTime);
-
-    //printf("Segment length: %f\n", encounterTime - lastOrbitEndTime);
-
-    trajectory.push_back({encounterTime, newOrbit});
+    trajectory.push_back(Segment{encounterTime, endType, newSoi, newOrbit});
   }
 
   void purgeTrajectory(Trajectory& trajectory, double currentTime) {
     // again assumes that trajectory is sorted oldest at front newest at back
     int idx = 0;
     for (Segment segment : trajectory) {
-      if (segment.first > currentTime) {
+      if (segment.endTime > currentTime) {
         break;
       }
       idx += 1;

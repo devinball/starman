@@ -45,7 +45,7 @@ struct SceneManager {
   public:
     std::shared_ptr<Context> context;
 
-    Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, float eccentricity, float incl, float longNode, float argPeri, double soiRadius, Entity parent) {
+    Entity createPlanet(const std::string material, std::string name, double radius, double mass, double semiMajorAxis, double eccentricity, double incl, double longNode, double argPeri, double soiRadius, Entity parent) {
       Entity entity = context->registry->create();
       context->registry->emplace<Spatial>(entity, Vector3N{0, 0, 0}, Vector3F{float(radius), float(radius), float(radius)}, eulerToQuaternion(180, 0, 0));
       Handle<Mesh> mesh = context->resourceManager->load<Mesh>("example/models/uv_sphere.obj");
@@ -62,16 +62,12 @@ struct SceneManager {
       //double orbPer = sqrt((pow(semiMajorAxis, 3) * 4 * pow(std::numbers::pi, 2)) / (6.6743015e-11 * centerMass));
 
       // TODO: this ends at infinity, unsure how bad this is
-      Trajectory trajectory = Trajectory{{INFINITY, KeplerianOrbit{
-        eccentricity,
-        semiMajorAxis * (1 - pow(eccentricity, 2)),
-        radians(incl),
-        radians(longNode),
-        radians(argPeri),
-        0, // they all start at perihelion, this must be fixed later
-        parent
-        //parent == entt::null ? std::optional<SphereOfInfluence>{} : std::optional<SphereOfInfluence>{std::make_pair(std::make_shared<Orbiter>(context->registry->get<Orbiter>(parent)), std::make_shared<CelestialBody>(context->registry->get<CelestialBody>(parent)))}
-      }}};
+      Trajectory trajectory = {Segment(INFINITY, EndType::HORIZON, parent, KeplerianOrbit(
+        eccentricity, semiMajorAxis * (1 - pow(eccentricity, 2)),
+        radians(incl), radians(longNode), radians(argPeri), 0,
+        systemMass * Constants::G
+      ))};
+
       context->registry->emplace<CelestialBody>(entity, mass, mass * Constants::G, soiRadius);
       context->registry->emplace<Orbiter>(entity, trajectory);
       context->registry->emplace<Icon>(entity, Color(randomF(), randomF(), randomF(), 1.0f));
@@ -111,7 +107,8 @@ struct SceneManager {
       Vector3N position = Vector3N{pSpread * std::cos(theta), pSpread * std::sin(theta), 1e5 * randNorm()};
       Vector3N velocity = Vector3N(std::sin(theta) * vSpread + randNorm() * 150, -1 * std::cos(theta) * vSpread + randNorm() * 150, randNorm() * 150);
       double timeOffset = 0;// int(randomF() * 3600); // hack to stop all orbits from being computed at once
-      Trajectory trajectory = Trajectory{{1 + timeOffset, KinematicOrbit{position, velocity, Vector3N(0, 0, 0), 0}}};
+      Trajectory trajectory = {Segment(5, EndType::HORIZON, entt::null, KinematicOrbit(Vector3N(0, 0, 0), Vector3N(0, 0, 0), Vector3N(0, 0, 0), 0))};
+
       context->registry->emplace<Orbiter>(e, trajectory);
 
       return e;
